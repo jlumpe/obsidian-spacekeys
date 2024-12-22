@@ -1,8 +1,27 @@
-/*
+.prompt.msh-modal .suggestion-item {
+	align-items: center;
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+	.msh-key {
+		margin-right: 1em;
+	}
 
-If your plugin does not need CSS, delete this file.
+	.suggestion-aux {
+		font-size: var(--font-ui-small);
+	}
 
-*/
+	&.msh-group {
+		.msh-key kbd {
+			color: var(--text-on-accent);
+			background: var(--interactive-accent);
+		}
+	}
+
+	&.msh-command {
+	}
+
+	&.msh-command.msh-invalid {
+		code.msh-command-id, .suggestion-title {
+			color: var(--text-error);
+		}
+	}
+}

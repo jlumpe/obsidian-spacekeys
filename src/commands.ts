@@ -17,16 +17,15 @@ function getCommandById(app: App, id: string): Command | null {
 const KEY_REGEXP = /[a-zA-Z0-9]/;
 
 
-function checkKey(key: string) {
-	if (!KEY_REGEXP.test(key))
-		throw new Error('Invalid key ' + JSON.stringify(key));
+export function checkKey(key: string): boolean {
+	return KEY_REGEXP.test(key);
 }
 
 
-type CommandItem = CommandRef | CommandGroup;
+export type CommandItem = CommandRef | CommandGroup;
 
 
-class CommandRef {
+export class CommandRef {
 	command_id: string;
 	description: string | null;
 
@@ -48,7 +47,8 @@ export class CommandGroup {
 
 	/* Add child command/group given next key in sequence. */
 	addChild<T extends CommandItem>(key: string, item: T): T {
-		checkKey(key);
+		if (!checkKey(key))
+			throw new Error('Invalid key ' + JSON.stringify(key));
 		this.children[key] = item;
 		return item;
 	}

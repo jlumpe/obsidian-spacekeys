@@ -1,4 +1,4 @@
-import { App, Plugin, PluginSettingTab, Command, Setting, SuggestModal, Notice } from 'obsidian';
+import { App, Command, SuggestModal, Notice } from 'obsidian';
 
 
 const CSS_PREFIX = 'msh-';
@@ -37,7 +37,7 @@ class CommandRef {
 }
 
 
-class CommandGroup {
+export class CommandGroup {
 	description: string | null;
 	children: { [key: string]: CommandItem };
 
@@ -80,7 +80,7 @@ class CommandGroup {
 }
 
 
-function makeTestCommands(): CommandGroup {
+export function makeTestCommands(): CommandGroup {
 	const root = new CommandGroup();
 
 	const x = root.addChild('x', new CommandGroup('Text'));
@@ -103,7 +103,7 @@ interface CommandSuggestion {
 }
 
 
-class HotkeysModal extends SuggestModal<CommandSuggestion> {
+export class HotkeysModal extends SuggestModal<CommandSuggestion> {
 	execDelay = 100;
 	showInvalid = true;
 	showIds = true;
@@ -243,79 +243,5 @@ class HotkeysModal extends SuggestModal<CommandSuggestion> {
 			() => (this.app as any).commands.executeCommand(command),
 			this.execDelay,
 		);
-	}
-}
-
-
-interface MoreSeqHotkeysSettings {
-}
-
-
-const DEFAULT_SETTINGS: MoreSeqHotkeysSettings = {
-}
-
-
-export default class MoreSeqHotkeysPlugin extends Plugin {
-	settings: MoreSeqHotkeysSettings;
-	commands: CommandGroup;
-
-	async onload() {
-		console.log('Loading MoreSeqHotkeys');
-
-		await this.loadSettings();
-
-		this.addSettingTab(new MoreSeqHotkeysSettingTab(this.app, this));
-
-		this.registerCommands()
-
-		this.commands = makeTestCommands();
-	}
-
-	private registerCommands(): void {
-		this.addCommand({
-			id: 'leader',
-			name: 'Leader',
-			callback: () => {
-				new HotkeysModal(this.app, this.commands).open();
-			},
-		})
-	}
-
-	onunload() {
-	}
-
-	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-	}
-
-	async saveSettings() {
-		await this.saveData(this.settings);
-	}
-}
-
-
-class MoreSeqHotkeysSettingTab extends PluginSettingTab {
-	plugin: MoreSeqHotkeysPlugin;
-
-	constructor(app: App, plugin: MoreSeqHotkeysPlugin) {
-		super(app, plugin);
-		this.plugin = plugin;
-	}
-
-	display(): void {
-		const {containerEl} = this;
-
-		// containerEl.empty();
-
-		// new Setting(containerEl)
-		// 	.setName('Setting #1')
-		// 	.setDesc('It\'s a secret')
-		// 	.addText(text => text
-		// 		.setPlaceholder('Enter your secret')
-		// 		.setValue(this.plugin.settings.mySetting)
-		// 		.onChange(async (value) => {
-		// 			this.plugin.settings.mySetting = value;
-		// 			await this.plugin.saveSettings();
-		// 		}));
 	}
 }

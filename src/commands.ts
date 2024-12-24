@@ -51,6 +51,12 @@ export class CommandGroup {
 		this.children = {};
 	}
 
+	isEmpty(): boolean {
+		for (const prop in this.children)
+			return false;
+		return true;
+	}
+
 	/* Add child command/group given next key in sequence. */
 	addChild<T extends CommandItem>(key: string, item: T): T {
 		if (!checkKey(key))
@@ -100,8 +106,9 @@ export class HotkeysModal extends SuggestModal<CommandSuggestion> {
 
 	constructor(app: App, public commands: CommandGroup) {
 		super(app);
-		this.modalEl.addClass(CSS_PREFIX + 'modal')
-		console.log(this.inputEl);
+		this.modalEl.addClass(CSS_PREFIX + 'modal');
+		if (this.commands.isEmpty())
+			this.emptyStateText = 'No keymap defined';
 	}
 
 	makeSuggestion(key: string | null, item: CommandItem): CommandSuggestion {

@@ -80,22 +80,6 @@ export class CommandGroup {
 }
 
 
-export function makeTestCommands(): CommandGroup {
-	const root = new CommandGroup();
-
-	const x = root.addChild('x', new CommandGroup('Text'));
-	x.addChild('h', new CommandRef('editor:set-heading'));
-	x.addChild('l', new CommandRef('editor:foo'))
-
-	const e = root.addChild('e', new CommandGroup('Editor'));
-	e.addChild('l', new CommandRef('editor:insert-link'));
-
-	root.addChild('i', new CommandRef('invalid'));
-
-	return root;
-}
-
-
 interface CommandSuggestion {
 	key: string | null;
 	item: CommandItem;

@@ -1,6 +1,6 @@
 import { App, Plugin, PluginSettingTab, Modal, Notice, Setting } from 'obsidian';
 
-import { CommandGroup, HotkeysModal, makeTestCommands } from "commands";
+import { CommandGroup, HotkeysModal } from "commands";
 import { parseCommandsFromMD } from 'parseconfig';
 
 

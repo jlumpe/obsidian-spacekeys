@@ -15,7 +15,7 @@ function getCommandById(app: App, id: string): Command | null {
 
 
 // Space (0x20) thru tilde (0x7F), all printable ASCII symbols
-const KEY_REGEXP = /^[ -~]$/;
+const KEY_REGEXP = /^[ -~\t]$/;
 
 
 export function checkKey(key: string): boolean {
@@ -23,8 +23,14 @@ export function checkKey(key: string): boolean {
 }
 
 
+const KEY_REPRS: {[key: string]: string} = {
+	' ': 'SPC',
+	'\t': 'TAB',
+};
+
+
 function reprKey(key: string): string {
-	return key == ' ' ? 'SPC' : key;
+	return KEY_REPRS[key] ?? key;
 }
 
 
@@ -109,8 +115,26 @@ export class HotkeysModal extends SuggestModal<CommandSuggestion> {
 		this.modalEl.addClass(CSS_PREFIX + 'modal');
 		if (this.commands.isEmpty())
 			this.emptyStateText = 'No keymap defined';
+
+		// Capture tab key as input
+		this.scope.register([], 'Tab', (evt, ctx) => {
+			console.log('Tab');
+			this.addCharToInput('\t');
+			return false;  // Prevent default
+		});
 	}
 
+	/**
+	 * Add the given character to the input field and fire the input changed event.
+	 */
+	addCharToInput(char: string): void {
+		this.inputEl.value = this.inputEl.value + char;
+		this.inputEl.trigger('input');
+	}
+
+	/**
+	 * Make a suggestion object for the given key and command/group
+	 */
 	makeSuggestion(key: string | null, item: CommandItem): CommandSuggestion {
 		return {
 			key: key,
@@ -210,8 +234,7 @@ export class HotkeysModal extends SuggestModal<CommandSuggestion> {
 			super.selectSuggestion(value, evt);
 		else {
 			// On group selection, just add the key to the input
-			this.inputEl.value = this.inputEl.value + value.key;
-			this.inputEl.trigger('input');
+			this.addCharToInput(value.key);
 		}
 	}
 

@@ -130,8 +130,23 @@ export class HotkeysModal extends SuggestModal<CommandSuggestion> {
 				suggestions.push(this.makeSuggestion(key, item));
 		}
 
-		// TODO sort
+		suggestions.sort(this.compareSuggestions.bind(this));
 		return suggestions;
+	}
+
+	/**
+	 * Compare two suggestions for sorting.
+	 * Sorts groups before commands, then by key alphabetically.
+	 */
+	compareSuggestions(a: CommandSuggestion, b: CommandSuggestion): number {
+		const a_group = a.item instanceof CommandGroup;
+		const b_group = b.item instanceof CommandGroup;
+		if (a_group && !b_group)
+			return -1;
+		else if (b_group && !a_group)
+			return 1;
+		else
+			return (a.key ?? '').localeCompare(b.key ?? '');
 	}
 
 	renderSuggestion(suggestion: CommandSuggestion, el: HTMLElement): void {

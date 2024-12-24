@@ -14,11 +14,17 @@ function getCommandById(app: App, id: string): Command | null {
 }
 
 
-const KEY_REGEXP = /[a-zA-Z0-9]/;
+// Space (0x20) thru tilde (0x7F), all printable ASCII symbols
+const KEY_REGEXP = /[ -~]/;
 
 
 export function checkKey(key: string): boolean {
 	return KEY_REGEXP.test(key);
+}
+
+
+function reprKey(key: string): string {
+	return key == ' ' ? 'SPC' : key;
 }
 
 
@@ -179,7 +185,7 @@ export class HotkeysModal extends SuggestModal<CommandSuggestion> {
 		const title = content.createEl('div', {cls: 'suggestion-title'});
 
 		if (suggestion.key)
-			keyEl.createEl('kbd', {text: suggestion.key});
+			keyEl.createEl('kbd', {text: reprKey(suggestion.key)});
 
 		if (description)
 			title.createEl('span', {text: description});

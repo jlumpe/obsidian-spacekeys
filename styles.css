@@ -1,12 +1,25 @@
 .prompt.spacekeys-modal .suggestion-item {
 	align-items: center;
+	column-gap: 1em;
 
 	.spacekeys-key {
-		margin-right: 1em;
+	}
+
+	.suggestion-content {
+		max-height: 2.5em;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 
 	.suggestion-aux {
 		font-size: var(--font-ui-small);
+		max-width: 30%;
+	}
+
+	.spacekeys-command-id {
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 
 	&.spacekeys-group {
@@ -17,11 +30,10 @@
 	}
 
 	&.spacekeys-command {
-	}
-
-	&.spacekeys-command.spacekeys-invalid {
-		code.spacekeys-command-id, .suggestion-title {
-			color: var(--text-error);
+		&.spacekeys-invalid {
+			code.spacekeys-command-id, .suggestion-title {
+				color: var(--text-error);
+			}
 		}
 	}
 }

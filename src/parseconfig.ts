@@ -3,6 +3,21 @@ import { parseYaml } from "obsidian";
 import { CommandGroup, CommandItem, CommandRef, checkKey } from "commands";
 
 
+const keyAliases: {[key: string]: string} = {
+	space: ' ',
+	spc: ' ',
+	tab: '\t',
+};
+
+
+/**
+ * Get key character, looking up aliases.
+ */
+function getKey(s: string): string {
+	return keyAliases[s.toLowerCase()] ?? s;
+}
+
+
 type YAMLObject = {[key: string]: YAMLData};
 type YAMLData = YAMLObject | Array<YAMLData> | string | number | null;
 type ParsePath = Array<string | number>;
@@ -57,10 +72,11 @@ function commandItemFromYAML(data: YAMLData, path: ParsePath): CommandItem {
 			item = new CommandGroup();
 
 			for (const key in data.items) {
-				if (!checkKey(key))
+				const key2 = getKey(key);
+				if (!checkKey(key2))
 					throw error('Invalid key ' + JSON.stringify(key), ['items']);
 
-				item.children[key] = commandItemFromYAML(data.items[key], path.concat(['items', key]));
+				item.children[key2] = commandItemFromYAML(data.items[key], path.concat(['items', key]));
 			}
 
 		} else if ('command' in data) {

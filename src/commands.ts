@@ -15,7 +15,7 @@ function getCommandById(app: App, id: string): Command | null {
 
 
 // Space (0x20) thru tilde (0x7F), all printable ASCII symbols
-const KEY_REGEXP = /[ -~]/;
+const KEY_REGEXP = /^[ -~]$/;
 
 
 export function checkKey(key: string): boolean {

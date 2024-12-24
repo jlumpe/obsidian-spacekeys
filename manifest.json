@@ -1,9 +1,9 @@
 {
-	"id": "more-seq-hotkeys",
-	"name": "More Sequence Hotkeys",
+	"id": "spacekeys",
+	"name": "Spacekeys",
 	"version": "0.1.0",
 	"minAppVersion": "0.15.0",
-	"description": "(Yet another) plugin for defining hotkeys based on sequences of keypresses.",
+	"description": "Define hotkeys based on sequences of keypresses.",
 	"author": "Jared Lumpe",
 	"authorUrl": "https://github.com/jlumpe",
 	"isDesktopOnly": true

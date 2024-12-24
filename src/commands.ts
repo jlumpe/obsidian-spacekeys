@@ -1,7 +1,7 @@
 import { App, Command, SuggestModal, Notice } from 'obsidian';
 
 
-const CSS_PREFIX = 'msh-';
+const CSS_PREFIX = 'spacekeys-';
 
 
 /**

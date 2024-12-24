@@ -4,29 +4,29 @@ import { CommandGroup, HotkeysModal, makeTestCommands } from "commands";
 import { parseCommandsFromMD } from 'parseconfig';
 
 
-interface MoreSeqHotkeysSettings {
+interface SpacekeysSettings {
 	commandsFile: string | null;
 }
 
 
-const DEFAULT_SETTINGS: MoreSeqHotkeysSettings = {
+const DEFAULT_SETTINGS: SpacekeysSettings = {
 	commandsFile: null,
 };
 
 
-export default class MoreSeqHotkeysPlugin extends Plugin {
-	settings: MoreSeqHotkeysSettings;
+export default class SpacekeysPlugin extends Plugin {
+	settings: SpacekeysSettings;
 	commands: CommandGroup;
 
 	async onload() {
-		console.log('Loading MoreSeqHotkeys');
+		console.log('Loading Spacekeys');
 
 		this.commands = new CommandGroup();
 
 		await this.loadSettings();
 		await this.loadCommands(false);
 
-		this.addSettingTab(new MoreSeqHotkeysSettingTab(this.app, this));
+		this.addSettingTab(new SpacekeysSettingTab(this.app, this));
 
 		this.registerCommands()
 	}
@@ -104,10 +104,10 @@ export default class MoreSeqHotkeysPlugin extends Plugin {
 }
 
 
-class MoreSeqHotkeysSettingTab extends PluginSettingTab {
-	plugin: MoreSeqHotkeysPlugin;
+class SpacekeysSettingTab extends PluginSettingTab {
+	plugin: SpacekeysPlugin;
 
-	constructor(app: App, plugin: MoreSeqHotkeysPlugin) {
+	constructor(app: App, plugin: SpacekeysPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}

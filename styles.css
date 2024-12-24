@@ -1,7 +1,7 @@
-.prompt.msh-modal .suggestion-item {
+.prompt.spacekeys-modal .suggestion-item {
 	align-items: center;
 
-	.msh-key {
+	.spacekeys-key {
 		margin-right: 1em;
 	}
 
@@ -9,18 +9,18 @@
 		font-size: var(--font-ui-small);
 	}
 
-	&.msh-group {
-		.msh-key kbd {
+	&.spacekeys-group {
+		.spacekeys-key kbd {
 			color: var(--text-on-accent);
 			background: var(--interactive-accent);
 		}
 	}
 
-	&.msh-command {
+	&.spacekeys-command {
 	}
 
-	&.msh-command.msh-invalid {
-		code.msh-command-id, .suggestion-title {
+	&.spacekeys-command.spacekeys-invalid {
+		code.spacekeys-command-id, .suggestion-title {
 			color: var(--text-error);
 		}
 	}

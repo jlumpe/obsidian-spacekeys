@@ -1,4 +1,4 @@
-import { App, Command, SuggestModal, Notice } from 'obsidian';
+import { App, Command, SuggestModal, Notice, FuzzySuggestModal, KeymapContext, MarkdownView } from 'obsidian';
 
 
 const CSS_PREFIX = 'spacekeys-';
@@ -11,6 +11,14 @@ const CSS_PREFIX = 'spacekeys-';
 function getCommandById(app: App, id: string): Command | null {
 	const result = (app as any).commands.findCommand(id);
 	return result ?? null;
+}
+
+/**
+ * Get list of all defined commands, including commands not available in the current context.
+ * As with the previous function, this doesn't appear to be in the official API.
+ */
+function listCommands(app: App): Command[] {
+	return Object.values((app as any).commands.commands);
 }
 
 
@@ -296,5 +304,61 @@ export class HotkeysModal extends SuggestModal<CommandSuggestion> {
 			() => (this.app as any).commands.executeCommand(command),
 			this.execDelay,
 		);
+	}
+}
+
+
+/**
+ * Modal for finding command IDs.
+ */
+export class FindCommandModal extends FuzzySuggestModal<Command> {
+	constructor(app: App) {
+		super(app);
+
+		addModalTitle(this, {html: '<strong>Spacekeys</strong>: find command'});
+
+		this.setInstructions([
+			{command: '↵', purpose: 'Copy ID'},
+			{command: 'Ctrl + ↵', purpose: 'Insert ID'},
+		]);
+
+		this.scope.register(['Ctrl'], 'Enter', (evt: KeyboardEvent, ctx: KeymapContext) => {
+			// Also not part of the public API
+			(this as any).chooser.useSelectedItem(evt);
+		});
+	}
+
+	getItems(): Command[] {
+		return listCommands(this.app);
+	}
+
+	getItemText(command: Command): string {
+		return command.name + ' ' + command.id;
+	}
+
+	onChooseItem(item: Command, evt: MouseEvent | KeyboardEvent): void {
+		if (evt.ctrlKey)
+			this.insertCommand(item);
+		else
+			this.copyCommand(item);
+	}
+
+	/**
+	 * Copy command ID to clipboard.
+	 */
+	copyCommand(command: Command) {
+		navigator.clipboard.writeText(command.id);
+		new Notice('Copied to clipboard: ' + command.id);
+	}
+
+	/**
+	 * Insert command into active document.
+	 */
+	insertCommand(command: Command) {
+		const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+		if (view) {
+			const editor = view.editor;
+			editor.replaceSelection(command.id);
+		}
 	}
 }

@@ -1,6 +1,6 @@
 import { App, Plugin, PluginSettingTab, Modal, Notice, Setting } from 'obsidian';
 
-import { CommandGroup, HotkeysModal } from "commands";
+import { CommandGroup, HotkeysModal, FindCommandModal } from "commands";
 import { parseCommandsFromMD } from 'parseconfig';
 
 
@@ -44,6 +44,14 @@ export default class SpacekeysPlugin extends Plugin {
 			id: 'load-keymap',
 			name: 'Load Keymap',
 			callback: async () => this.loadCommands(true),
+		});
+
+		this.addCommand({
+			id: 'find-command',
+			name: 'Find command ID',
+			callback: () => {
+				new FindCommandModal(this.app).open();
+			},
 		});
 	}
 

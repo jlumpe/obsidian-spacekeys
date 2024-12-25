@@ -67,6 +67,9 @@ items:
           w: editor:insert-wikilink
           T: editor:insert-table
 
+      # This is a menu with one item in Markdown mode
+      l: editor:toggle-bullet-list
+
       t:
         description: Table
         items:
@@ -90,12 +93,21 @@ items:
           s: editor:toggle-strikethrough
 
   p:
+    # Treat Spacemacs Projectile project <-> Obsidian vault
     description: Projects
     items:
+      t: file-explorer:open
+      # These are the same?
+      p: app:open-vault
+      l: app:open-vault
+        # Is this the same as org tags or different?
+      g: obsidian-better-command-palette:open-better-commmand-palette-tag-search
+      f: obsidian-better-command-palette:open-better-commmand-palette-file-search
 
   s:
     description: Search
     items:
+      p: global-search:open
 
   t:
     description: Toggles
@@ -104,6 +116,14 @@ items:
   w:
     description: Windows
     items:
+      TAB: editor:focus
+      d: workspace:close-window
+      h: editor:focus-left
+      l: editor:focus-right
+      k: editor:focus-top
+      j: editor:focus-bottom
+      s: workspace:split-horizontal
+      v: workspace:split-vertical
 
   x:
     description: Text
@@ -112,16 +132,5 @@ items:
   T:
     description: UI Toggles / Themes
     items:
-
-  i:
-    description: Insert
-    items:
-
-  i:
-    description: Insert
-    items:
-
-  i:
-    description: Insert
-    items:
+      s: theme:switch
 ```

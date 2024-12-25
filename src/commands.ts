@@ -98,6 +98,21 @@ export class CommandGroup {
 }
 
 
+/**
+ * Add title element to SuggestModal instance.
+ */
+function addModalTitle(modal: SuggestModal, o: {text?: string, html?: string}): HTMLElement {
+	const { modalEl } = modal;
+	const el = createEl('div', {cls: CSS_PREFIX + 'modal-title'});
+	modalEl.insertBefore(el, modalEl.firstChild);
+	if (o.text)
+		el.textContent = o.text;
+	if (o.html)
+		el.innerHTML = o.html;
+	return el;
+}
+
+
 interface CommandSuggestion {
 	key: string | null;
 	item: CommandItem;
@@ -112,7 +127,10 @@ export class HotkeysModal extends SuggestModal<CommandSuggestion> {
 
 	constructor(app: App, public commands: CommandGroup) {
 		super(app);
+
 		this.modalEl.addClass(CSS_PREFIX + 'modal');
+		addModalTitle(this, {html: '<strong>Spacekeys</strong>'});
+
 		if (this.commands.isEmpty())
 			this.emptyStateText = 'No keymap defined';
 

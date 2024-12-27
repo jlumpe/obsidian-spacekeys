@@ -1,6 +1,7 @@
 import { parseYaml } from "obsidian";
 
 import { CommandGroup, CommandItem, CommandRef, checkKey } from "commands";
+import { assert } from "./util";
 
 
 const keyAliases: {[key: string]: string} = {
@@ -147,13 +148,13 @@ function findCodeBlock(lines: string): string | null {
 	let begin: number | null = null;
 
 	for (const match of matches) {
+		assert(match.index);
 		if (begin === null)
 			// First match
 			begin = match.index + match[0].length;
-		else {
+		else
 			// Second match
 			return lines.substring(begin, match.index);
-		}
 	}
 
 	return null;

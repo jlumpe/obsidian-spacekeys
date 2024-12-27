@@ -1,5 +1,7 @@
 import { App, Command, SuggestModal, Notice, FuzzySuggestModal, KeymapContext, MarkdownView } from 'obsidian';
 
+import { assert } from "./util";
+
 
 const CSS_PREFIX = 'spacekeys-';
 
@@ -109,7 +111,7 @@ export class CommandGroup {
 /**
  * Add title element to SuggestModal instance.
  */
-function addModalTitle(modal: SuggestModal, o: {text?: string, html?: string}): HTMLElement {
+function addModalTitle(modal: SuggestModal<any>, o: {text?: string, html?: string}): HTMLElement {
 	const { modalEl } = modal;
 	const el = createEl('div', {cls: CSS_PREFIX + 'modal-title'});
 	modalEl.insertBefore(el, modalEl.firstChild);
@@ -260,6 +262,7 @@ export class HotkeysModal extends SuggestModal<CommandSuggestion> {
 			super.selectSuggestion(value, evt);
 		else {
 			// On group selection, just add the key to the input
+			assert(value.key);
 			this.addCharToInput(value.key);
 		}
 	}

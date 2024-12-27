@@ -130,7 +130,7 @@ class SpacekeysSettingTab extends PluginSettingTab {
 			// .setDesc('It\'s a secret')
 			.addText(text => text
 				// .setPlaceholder('Enter your secret')
-				.setValue(this.plugin.settings.commandsFile)
+				.setValue(this.plugin.settings.commandsFile ?? '')
 				.onChange(async (value: string) => {
 					this.plugin.settings.commandsFile = value.trim() || null;
 					await this.plugin.saveSettings();

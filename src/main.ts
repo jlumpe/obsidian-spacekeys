@@ -1,7 +1,8 @@
 import { App, Plugin, PluginSettingTab, Modal, Notice, Setting } from 'obsidian';
 
 import { CommandGroup, HotkeysModal, FindCommandModal } from "commands";
-import { parseKeymapMD, parseKeymapYAML } from 'parseconfig';
+import { parseKeymapMD, parseKeymapYAML, ParseError } from 'parseconfig';
+import { UserError, userErrorString } from './util';
 
 
 interface SpacekeysSettings {
@@ -26,9 +27,15 @@ export default class SpacekeysPlugin extends Plugin {
 		this.keymap = new CommandGroup();
 
 		await this.loadSettings();
-		await this.loadKeymap(false);
 
 		this.addSettingTab(new SpacekeysSettingTab(this.app, this));
+
+		if (this.settings.keymapFile) {
+			await this.loadKeymap().catch((e) => {
+				const msg = userErrorString(e);
+				console.log(`Spacekeys: failed to load user keymap file ${this.settings.keymapFile}: ${msg}`);
+			});
+		}
 	}
 
 	private registerCommands(): void {
@@ -43,7 +50,10 @@ export default class SpacekeysPlugin extends Plugin {
 		this.addCommand({
 			id: 'load-keymap',
 			name: 'Load Keymap',
-			callback: async () => this.loadKeymap(true),
+			callback: async () => this
+				.loadKeymap()
+				.then(() => { new Notice('Keymap loaded from file'); })
+				.catch((e) => { new Notice('Failed to load keymap: ' + userErrorString(e), 5000); }),
 		});
 
 		this.addCommand({
@@ -56,48 +66,35 @@ export default class SpacekeysPlugin extends Plugin {
 	}
 
 	/**
-	 * Load keymap from file specified in config.
-	 * @param notify - Whether to alert the user when loading succeeds/fails.
+	 * Load keymap from file specified in settings.
 	 */
-	private async loadKeymap(notify = false): Promise<void> {
-		// const {app} = this;
-
-		function fail(msg: string) {
-			console.error(msg);
-
-			if (notify) {
-				// const modal = new Modal(app);
-				// modal.setContent(msg);
-				// modal.open();
-				new Notice(msg, 5000);
-			}
-		}
+	async loadKeymap(): Promise<void> {
 
 		const filename = this.settings.keymapFile;
+		let contents: string;
 
-		if (!filename) {
-			fail('Keymap file not set in plugin settings');
-			return;
-		}
+		if (!filename)
+			throw new UserError('Keymap file not set in plugin settings');
 
 		const file = this.app.vault.getFileByPath(filename);
-		if (file === null) {
-			fail('File not found: ' + filename);
-			return;
-		}
+		if (file === null)
+			throw new UserError('File not found');
 
 		console.log('Spacekeys: loading keymap from ' + filename);
 
-		const contents = await this.app.vault.cachedRead(file);
-		const result = parseKeymapMD(contents);
+		try {
+			contents = await this.app.vault.cachedRead(file);
+		} catch (e) {
+			console.error(e);
+			throw new UserError('Unable to read file', {context: e});
+		}
 
-		if (result.error)
-			fail(result.error);
-
-		else if (result.keymap) {
-			this.keymap = result.keymap;
-			if (notify)
-				new Notice('Key map file loaded')
+		try {
+			this.keymap = parseKeymapMD(contents);
+		} catch (e) {
+			console.error(e);
+			const details = e instanceof ParseError ? e.message : null;
+			throw new UserError('Parse error', {details, context: e});
 		}
 	}
 

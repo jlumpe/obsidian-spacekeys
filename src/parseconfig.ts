@@ -21,7 +21,6 @@ function getKey(s: string): string {
 
 type YAMLObject = {[key: string]: YAMLData};
 type YAMLData = YAMLObject | Array<YAMLData> | string | number | null;
-type ParsePath = Array<string | number>;
 
 
 function isYAMLObject(value: YAMLData): value is YAMLObject {
@@ -29,8 +28,20 @@ function isYAMLObject(value: YAMLData): value is YAMLObject {
 }
 
 
-class YAMLParseError extends Error {
-	constructor(msg: string, public path: ParsePath, public data?: YAMLData) {
+/**
+ * Sequence of property names or array indices describing the location of a value within parsed YAML
+ * data.
+ */
+type ParsePath = Array<string | number>;
+
+/**
+ * Error attempting to parse keymap from file.
+ *
+ * @prop path - If the error occurred in creating the keymap from parsed YAML, the path to the
+ *              problematic value.
+ */
+export class ParseError extends Error {
+	constructor(msg: string, public path: ParsePath | null = null, public data?: YAMLData) {
 		super(msg);
 	}
 }
@@ -41,11 +52,11 @@ class YAMLParseError extends Error {
  */
 function keymapFromYAML(data: YAMLData): CommandGroup {
 	if (!isYAMLObject(data))
-		throw new YAMLParseError('Root element not an object', [], data);
+		throw new ParseError('Root element not an object', [], data);
 
 	const item = commandItemFromYAML(data, []);
 	if (!(item instanceof CommandGroup))
-		throw new YAMLParseError('Root item must be a command group', [], data);
+		throw new ParseError('Root item must be a command group', [], data);
 
 	return item;
 }
@@ -55,7 +66,7 @@ function commandItemFromYAML(data: YAMLData, path: ParsePath): CommandItem {
 	let item: CommandItem;
 
 	function error(msg: string, extrapath?: ParsePath, dat: YAMLData = data) {
-		return new YAMLParseError(msg, extrapath ? path.concat(extrapath) : path, dat);
+		return new ParseError(msg, extrapath ? path.concat(extrapath) : path, dat);
 	}
 
 	if (typeof data === 'string') {
@@ -107,46 +118,30 @@ function commandItemFromYAML(data: YAMLData, path: ParsePath): CommandItem {
 }
 
 
-interface ParseResult {
-	keymap?: CommandGroup;
-	error?: string;
-}
-
-
 /**
  * Parse keymap from plain YAML.
  */
-export function parseKeymapYAML(lines: string): ParseResult {
+export function parseKeymapYAML(lines: string): CommandGroup {
 	let data;
 
 	try {
 		data = parseYaml(lines);
 	} catch (error) {
-		return {error: 'YAML parse error: ' + error};
+		throw new ParseError('YAML parse error: ' + error);
 	}
 
-	try {
-		return {keymap: keymapFromYAML(data)};
-
-	} catch (e) {
-		if (e instanceof YAMLParseError) {
-			console.error(String(e));
-			console.log({path: e.path, data: e.data});
-			return {error: String(e)};
-		}
-		throw e;
-	}
+	return keymapFromYAML(data);
 }
 
 
 /**
  * Parse keymap from fenced code block in Markdown file.
  */
-export function parseKeymapMD(lines: string): ParseResult {
+export function parseKeymapMD(lines: string): CommandGroup {
 	const yaml = findCodeBlock(lines);
 
 	if (!yaml)
-		return {error: 'No code block found'};
+		throw new ParseError('No code block found');
 
 	return parseKeymapYAML(yaml);
 }

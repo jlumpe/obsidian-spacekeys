@@ -76,7 +76,7 @@ export default class SpacekeysPlugin extends Plugin {
 		const filename = this.settings.commandsFile;
 
 		if (!filename) {
-			fail('Command file not set in plugin settings');
+			fail('Keymap file not set in plugin settings');
 			return;
 		}
 
@@ -85,6 +85,8 @@ export default class SpacekeysPlugin extends Plugin {
 			fail('File not found: ' + filename);
 			return;
 		}
+
+		console.log('Spacekeys: loading keymap from ' + filename);
 
 		const contents = await this.app.vault.cachedRead(file);
 		const result = parseCommandsFromMD(contents);
@@ -95,7 +97,7 @@ export default class SpacekeysPlugin extends Plugin {
 		else if (result.commands) {
 			this.commands = result.commands;
 			if (notify)
-				new Notice('Config file loaded')
+				new Notice('Key map file loaded')
 		}
 	}
 

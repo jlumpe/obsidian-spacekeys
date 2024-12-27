@@ -1,34 +1,34 @@
 import { App, Plugin, PluginSettingTab, Modal, Notice, Setting } from 'obsidian';
 
 import { CommandGroup, HotkeysModal, FindCommandModal } from "commands";
-import { parseCommandsFromMD } from 'parseconfig';
+import { parseKeymapMD, parseKeymapYAML } from 'parseconfig';
 
 
 interface SpacekeysSettings {
-	commandsFile: string | null;
+	keymapFile: string | null;
 }
 
 
 const DEFAULT_SETTINGS: SpacekeysSettings = {
-	commandsFile: null,
+	keymapFile: null,
 };
 
 
 export default class SpacekeysPlugin extends Plugin {
 	settings: SpacekeysSettings;
-	commands: CommandGroup;
+	keymap: CommandGroup;
 
 	async onload() {
 		console.log('Loading Spacekeys');
 
-		this.commands = new CommandGroup();
+		this.registerCommands()
+
+		this.keymap = new CommandGroup();
 
 		await this.loadSettings();
-		await this.loadCommands(false);
+		await this.loadKeymap(false);
 
 		this.addSettingTab(new SpacekeysSettingTab(this.app, this));
-
-		this.registerCommands()
 	}
 
 	private registerCommands(): void {
@@ -36,14 +36,14 @@ export default class SpacekeysPlugin extends Plugin {
 			id: 'leader',
 			name: 'Leader',
 			callback: () => {
-				new HotkeysModal(this.app, this.commands).open();
+				new HotkeysModal(this.app, this.keymap).open();
 			},
 		});
 
 		this.addCommand({
 			id: 'load-keymap',
 			name: 'Load Keymap',
-			callback: async () => this.loadCommands(true),
+			callback: async () => this.loadKeymap(true),
 		});
 
 		this.addCommand({
@@ -56,10 +56,10 @@ export default class SpacekeysPlugin extends Plugin {
 	}
 
 	/**
-	 * Load commands from file specified in config.
+	 * Load keymap from file specified in config.
 	 * @param notify - Whether to alert the user when loading succeeds/fails.
 	 */
-	private async loadCommands(notify = false): Promise<void> {
+	private async loadKeymap(notify = false): Promise<void> {
 		// const {app} = this;
 
 		function fail(msg: string) {
@@ -73,7 +73,7 @@ export default class SpacekeysPlugin extends Plugin {
 			}
 		}
 
-		const filename = this.settings.commandsFile;
+		const filename = this.settings.keymapFile;
 
 		if (!filename) {
 			fail('Keymap file not set in plugin settings');
@@ -89,13 +89,13 @@ export default class SpacekeysPlugin extends Plugin {
 		console.log('Spacekeys: loading keymap from ' + filename);
 
 		const contents = await this.app.vault.cachedRead(file);
-		const result = parseCommandsFromMD(contents);
+		const result = parseKeymapMD(contents);
 
 		if (result.error)
 			fail(result.error);
 
-		else if (result.commands) {
-			this.commands = result.commands;
+		else if (result.keymap) {
+			this.keymap = result.keymap;
 			if (notify)
 				new Notice('Key map file loaded')
 		}
@@ -128,13 +128,13 @@ class SpacekeysSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		new Setting(containerEl)
-			.setName('Config file')
+			.setName('Keymap file')
 			// .setDesc('It\'s a secret')
 			.addText(text => text
 				// .setPlaceholder('Enter your secret')
-				.setValue(this.plugin.settings.commandsFile ?? '')
+				.setValue(this.plugin.settings.keymapFile ?? '')
 				.onChange(async (value: string) => {
-					this.plugin.settings.commandsFile = value.trim() || null;
+					this.plugin.settings.keymapFile = value.trim() || null;
 					await this.plugin.saveSettings();
 				}));
 	}

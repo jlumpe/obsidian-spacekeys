@@ -37,9 +37,9 @@ class YAMLParseError extends Error {
 
 
 /**
- * Create commands from parsed YAML data.
+ * Create keymap from parsed YAML data.
  */
-function commandsFromYAML(data: YAMLData): CommandGroup {
+function keymapFromYAML(data: YAMLData): CommandGroup {
 	if (!isYAMLObject(data))
 		throw new YAMLParseError('Root element not an object', [], data);
 
@@ -108,29 +108,25 @@ function commandItemFromYAML(data: YAMLData, path: ParsePath): CommandItem {
 
 
 interface ParseResult {
-	commands?: CommandGroup;
+	keymap?: CommandGroup;
 	error?: string;
 }
 
 
 /**
- * Parse commands from fenced code block in Markdown file.
+ * Parse keymap from plain YAML.
  */
-export function parseCommandsFromMD(lines: string): ParseResult {
-	const yaml = findCodeBlock(lines);
+export function parseKeymapYAML(lines: string): ParseResult {
 	let data;
 
-	if (!yaml)
-		return {error: 'No code block found'};
-
 	try {
-		data = parseYaml(yaml);
+		data = parseYaml(lines);
 	} catch (error) {
 		return {error: 'YAML parse error: ' + error};
 	}
 
 	try {
-		return {commands: commandsFromYAML(data)};
+		return {keymap: keymapFromYAML(data)};
 
 	} catch (e) {
 		if (e instanceof YAMLParseError) {
@@ -143,6 +139,22 @@ export function parseCommandsFromMD(lines: string): ParseResult {
 }
 
 
+/**
+ * Parse keymap from fenced code block in Markdown file.
+ */
+export function parseKeymapMD(lines: string): ParseResult {
+	const yaml = findCodeBlock(lines);
+
+	if (!yaml)
+		return {error: 'No code block found'};
+
+	return parseKeymapYAML(yaml);
+}
+
+
+/**
+ * Find (first) fenced code block in Markdown text and return its contents.
+ */
 function findCodeBlock(lines: string): string | null {
 	const matches = lines.matchAll(/^```.*$/mg);
 	let begin: number | null = null;

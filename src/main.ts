@@ -220,6 +220,7 @@ class SpacekeysSettingTab extends PluginSettingTab {
 				.setIcon('refresh-cw')
 				.setTooltip('(Re)load keymap from file')
 				.onClick(evt => this.loadKeymap())
+				.setClass('mod-cta')
 			)
 			.addButton(btn => btn
 				.setIcon('file-plus-2')
@@ -230,6 +231,11 @@ class SpacekeysSettingTab extends PluginSettingTab {
 				.setIcon('pencil')
 				.setTooltip('Open file for editing')
 				.onClick(evt => this.openFile())
+			)
+			.addButton(btn => btn
+				.setIcon('external-link')
+				.setTooltip('Show file in system explorer')
+				.onClick(evt => this.showFile())
 			);
 
 		new Setting(containerEl)
@@ -380,5 +386,17 @@ class SpacekeysSettingTab extends PluginSettingTab {
 
 		// Alternate to open in external app, but not part of public API
 		// (this.app as any).openWithDefaultApp(filePath);
+	}
+
+	/**
+	 * Show file in system explorer.
+	 */
+	private showFile(): void {
+		const filePath = this.plugin.settings.keymapFile;
+		if (!filePath)
+			return;
+
+		// Not public API
+		(this.app as any).showInFolder(filePath);
 	}
 }

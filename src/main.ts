@@ -4,6 +4,8 @@ import { CommandGroup, HotkeysModal, FindCommandModal } from "commands";
 import { parseKeymapMD, parseKeymapYAML, ParseError } from 'parseconfig';
 import { UserError, userErrorString } from './util';
 
+import { INCLUDED_KEYMAPS_YAML } from 'include';
+
 
 interface SpacekeysSettings {
 	keymapFile: string | null;
@@ -15,6 +17,31 @@ const DEFAULT_SETTINGS: SpacekeysSettings = {
 };
 
 
+/**
+ * Get a builtin keymap by name.
+ */
+function getBuiltinKeymap(name: string): CommandGroup | null {
+	if (!(name in INCLUDED_KEYMAPS_YAML)) {
+		console.error('No builtin keymap named ' + name);
+		return null;
+	}
+
+	const yaml = INCLUDED_KEYMAPS_YAML[name];
+
+	try {
+		return parseKeymapYAML(yaml);
+	} catch (e) {
+		console.error('Error parsing default keymap ' + name);
+		if (e instanceof ParseError)
+			console.error(e.message, e.path, e.data);
+		else
+			console.error(e);
+	}
+
+	return null;
+}
+
+
 export default class SpacekeysPlugin extends Plugin {
 	settings: SpacekeysSettings;
 	keymap: CommandGroup;
@@ -24,7 +51,8 @@ export default class SpacekeysPlugin extends Plugin {
 
 		this.registerCommands()
 
-		this.keymap = new CommandGroup();
+		// Load default keymap
+		this.keymap = getBuiltinKeymap('default') ?? new CommandGroup();
 
 		await this.loadSettings();
 

@@ -1,0 +1,57 @@
+# Default Spacekeys keymap
+
+
+items:
+  SPC: command-palette:open
+  /: global-search:open
+
+  w:
+    description: Windows
+    items:
+      TAB: editor:focus
+      d: workspace:close-window
+      h: editor:focus-left
+      l: editor:focus-right
+      k: editor:focus-top
+      j: editor:focus-bottom
+      s: workspace:split-horizontal
+      v: workspace:split-vertical
+
+
+  f:
+    description: Files
+    items:
+      D: app:delete-file
+      o: open-with-default-app:open
+      R: workspace:edit-file-title
+      s: editor:save-file
+      t: file-explorer:open
+      T: file-explorer:reveal-active-file
+
+  x:
+    description: Text
+    items:
+      b: editor:toggle-bold
+      i: editor:toggle-italics
+      c: editor:toggle-code
+      p: editor:insert-codeblock
+      q: editor:toggle-blockquote
+      s: editor:toggle-strikethrough
+      l: editor:toggle-bullet-list
+
+  p:
+    description: Projects / Workspaces
+    items:
+
+
+  t:
+    description: Table
+    items:
+      b: editor:table-col-left
+      f: editor:table-col-right
+      p: editor:table-row-up
+      n: editor:table-row-down
+      c: editor:table-col-after
+      r: editor:table-row-after
+      C: editor:table-col-delete
+      R: editor:table-row-delete

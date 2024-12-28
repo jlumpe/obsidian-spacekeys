@@ -1,9 +1,23 @@
-import { App, TFile, PaneType, Modal } from 'obsidian';
+import { App, TFile, PaneType, Modal, FileView, WorkspaceLeaf, Workspace } from 'obsidian';
+
+
+/**
+ * Find an existing workspace leaf that is viewing the given file.
+ */
+function findLeafWithFile(workspace: Workspace, file: TFile): WorkspaceLeaf | null {
+	for (const leaf of workspace.getLeavesOfType('markdown')) {
+		if (leaf.view instanceof FileView && leaf.view.file === file)
+			return leaf;
+	}
+	return null;
+}
 
 
 /**
  * @prop newLeaf - Argument to app.workspace.getLeaf().
  * @prop active - Whether to make the tab active after opening.
+ * @prop useExisting - If true and there is an existing tab/view with the file open, focus on that
+ *                     tab (if active=true) instead of creating a new one.
  * @prop external - Whether to expect the file to be opened in an external application (which is
  *                  what will happen if it is a non-Markdown file). The default is true if the file
                     has the ".md" extension. If true it overrides the other settings.
@@ -11,6 +25,7 @@ import { App, TFile, PaneType, Modal } from 'obsidian';
 export interface OpenFileOpts {
 	newLeaf?: PaneType | boolean;
 	active?: boolean;
+	useExisting?: boolean;
 	external?: boolean;
 }
 
@@ -25,6 +40,17 @@ export async function openFile(app: App, file: string | TFile, opts: OpenFileOpt
 		return;
 
 	const external = opts.external ?? tfile.extension !== 'md';
+
+	// Try to find existing tab
+	if (!external && (opts.useExisting ?? true)) {
+		const existing = findLeafWithFile(app.workspace, tfile);
+		if (existing) {
+			if (opts.active ?? true)
+				app.workspace.setActiveLeaf(existing, {focus: true});
+			return;
+		}
+	}
+
 	const leaf = app.workspace.getLeaf(external ? false : opts.newLeaf);
 
 	// This seems to open the file in an external app if it is not Markdown

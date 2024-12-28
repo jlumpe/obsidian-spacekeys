@@ -335,7 +335,7 @@ class SpacekeysSettingTab extends PluginSettingTab {
 		const format = guessKeymapFileFormat(filePath, this.plugin.settings.keymapFileFormat);
 
 		// TODO - close settings window
-		// TODO - check if file already open
+		// TODO - check if file already open, focus to existing tab
 
 		// Create new tab to open file if Markdown, otherwise get current active tab.
 		const leaf = this.app.workspace.getLeaf(format == 'markdown' ? 'tab': false);
@@ -343,7 +343,7 @@ class SpacekeysSettingTab extends PluginSettingTab {
 		// This seems to open the file in an external app if it is not Markdown
 		leaf.openFile(file);
 
-		// Alternate to open in external app, but part of public API
+		// Alternate to open in external app, but not part of public API
 		// (this.app as any).openWithDefaultApp(filePath);
 	}
 }

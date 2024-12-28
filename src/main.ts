@@ -1,4 +1,4 @@
-import { App, Plugin, PluginSettingTab, Modal, Notice, Setting } from 'obsidian';
+import { App, Plugin, PluginSettingTab, Notice, Setting, normalizePath, TFile } from 'obsidian';
 
 import { CommandGroup, HotkeysModal, FindCommandModal } from "commands";
 import { parseKeymapMD, parseKeymapYAML, ParseError } from 'parseconfig';
@@ -200,14 +200,108 @@ class SpacekeysSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		new Setting(containerEl)
-			.setName('Keymap file')
-			// .setDesc('It\'s a secret')
+			.setName('Spacekeys keymap file')
+			.setDesc('YAML or Markdown file defining a custom keymap (see plugin description).')
+			.setHeading()
+			.addButton(btn => btn
+				.setIcon('refresh-cw')
+				.setTooltip('(Re)load keymap from file')
+				.onClick(evt => this.loadKeymap())
+			)
+			.addButton(btn => btn
+				.setIcon('file-plus-2')
+				.setTooltip('Create file with default contents')
+				.onClick(evt => this.createFile())
+			)
+			.addButton(btn => btn
+				.setIcon('pencil')
+				.setTooltip('Open file for editing')
+				.onClick(evt => this.openFile())
+			);
+
+		new Setting(containerEl)
+			.setName('Path')
+			.setDesc('Path to file within your vault, including extension (.md, .yml).')
 			.addText(text => text
-				// .setPlaceholder('Enter your secret')
+				.setPlaceholder('spacekeys.md')
 				.setValue(this.plugin.settings.keymapFile ?? '')
 				.onChange(async (value: string) => {
-					this.plugin.settings.keymapFile = value.trim() || null;
+					value = value.trim();
+					this.plugin.settings.keymapFile = value ? normalizePath(value) : null;
 					await this.plugin.saveSettings();
 				}));
+
+		new Setting(containerEl)
+			.setName('Format')
+			.setDesc('Force parsing as specified format, or leave on "Auto" to determine based on file extension.')
+			.addDropdown(dropdown => dropdown
+				.addOptions({
+					auto: 'Auto',
+					markdown: 'Markdown',
+					yaml: 'YAML',
+				})
+				.setValue(this.plugin.settings.keymapFileFormat)
+				.onChange(async (value: string) => {
+					this.plugin.settings.keymapFileFormat = value as KeymapFileFormat;
+					await this.plugin.saveSettings();
+				})
+			);
+	}
+
+	private loadKeymap(): void {
+		if (!this.plugin.settings.keymapFile)
+			return;
+
+		this.plugin.loadKeymap().then(
+			() => { new Notice('Keymap reloaded'); },
+			(e: Error) => {
+				new Notice('Error');  // TODO
+			}
+		);
+	}
+
+	/**
+	 * Create file with default contents.
+	 */
+	private createFile(): void {
+		const filename = this.plugin.settings.keymapFile;
+		if (!filename)
+			return;
+
+		const format = guessKeymapFileFormat(filename, this.plugin.settings.keymapFileFormat);
+		if (format == null)
+			throw new UserError('Could not guess format of file from extension')
+
+		new Notice('Unimplemented');  // TODO
+	}
+
+	/**
+	 * Open the keymap file for editing.
+	 */
+	private openFile(): void {
+		const filePath = this.plugin.settings.keymapFile;
+		if (!filePath)
+			return;
+
+		const file = this.app.vault.getAbstractFileByPath(filePath);
+
+		if (!(file instanceof TFile)) {
+			new Notice('Not a file: ' + filePath);
+			return
+		}
+
+		const format = guessKeymapFileFormat(filePath, this.plugin.settings.keymapFileFormat);
+
+		// TODO - close settings window
+		// TODO - check if file already open
+
+		// Create new tab to open file if Markdown, otherwise get current active tab.
+		const leaf = this.app.workspace.getLeaf(format == 'markdown' ? 'tab': false);
+
+		// This seems to open the file in an external app if it is not Markdown
+		leaf.openFile(file);
+
+		// Alternate to open in external app, but part of public API
+		// (this.app as any).openWithDefaultApp(filePath);
 	}
 }

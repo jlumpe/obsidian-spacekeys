@@ -39,7 +39,10 @@ const context = await esbuild.context({
 	treeShaking: true,
 	outfile: "main.js",
 	minify: prod,
-	loader: { '.yml': 'text', },
+	loader: {
+		'.yml': 'text',
+		'.md': 'text',
+	},
 });
 
 if (prod) {

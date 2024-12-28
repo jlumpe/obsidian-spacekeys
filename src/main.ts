@@ -2,9 +2,9 @@ import { App, Plugin, PluginSettingTab, Notice, Setting, normalizePath, TFile, M
 
 import { CommandGroup, HotkeysModal, FindCommandModal } from "commands";
 import { parseKeymapMD, parseKeymapYAML, ParseError } from 'parseconfig';
+import { ConfirmModal, openFile } from 'obsidian-utils';
 import { UserError, userErrorString } from './util';
-
-import { INCLUDED_KEYMAPS_YAML } from 'include';
+import { INCLUDED_KEYMAPS_YAML, KEYMAP_MARKDOWN_HEADER } from 'include';
 
 
 // File format of keymap file in plugin settings
@@ -62,6 +62,19 @@ function getBuiltinKeymap(name: string): CommandGroup | null {
 	}
 
 	return null;
+}
+
+
+/**
+ * Create Markdown file wrapping keymap YAML with a default header.
+ * @param yaml - YAML keymap definition as string.
+ */
+function makeKeymapMarkdown(yaml: string): string {
+	let markdown = KEYMAP_MARKDOWN_HEADER;
+	markdown += '```yaml\n';
+	markdown += yaml;
+	markdown += '\n```\n';
+	return markdown;
 }
 
 
@@ -305,16 +318,42 @@ class SpacekeysSettingTab extends PluginSettingTab {
 	/**
 	 * Create file with default contents.
 	 */
-	private createFile(): void {
-		const filename = this.plugin.settings.keymapFile;
-		if (!filename)
+	private async createFile(): Promise<void> {
+
+		const filePath = this.plugin.settings.keymapFile;
+		if (!filePath)
 			return;
 
-		const format = guessKeymapFileFormat(filename, this.plugin.settings.keymapFileFormat);
+		const format = guessKeymapFileFormat(filePath, this.plugin.settings.keymapFileFormat);
 		if (format == null)
 			throw new UserError('Could not guess format of file from extension')
 
-		new Notice('Unimplemented');  // TODO
+		const yaml = INCLUDED_KEYMAPS_YAML.default;
+		const content = format === 'markdown' ? makeKeymapMarkdown(yaml) : yaml;
+
+		const file = this.app.vault.getFileByPath(filePath);
+
+		if (file) {
+			const modal = new ConfirmModal(this.app, {
+				title: 'Keymap file exists',
+				message: `The file "${filePath}" exists, overwrite?`,
+				yesText: 'Overwrite',
+				yesCls: 'mod-warning',
+				default: false,
+			});
+			modal.callback = async (result) => {
+				if (!result)
+					return;
+				await this.app.vault.modify(file, content);
+				openFile(this.app, file, {newLeaf: 'tab'});
+			};
+			modal.open();
+
+		} else {
+			// TODO create directory
+			const created = await this.app.vault.create(filePath, content);
+			openFile(this.app, created, {newLeaf: 'tab'});
+		}
 	}
 
 	/**
@@ -337,11 +376,7 @@ class SpacekeysSettingTab extends PluginSettingTab {
 		// TODO - close settings window
 		// TODO - check if file already open, focus to existing tab
 
-		// Create new tab to open file if Markdown, otherwise get current active tab.
-		const leaf = this.app.workspace.getLeaf(format == 'markdown' ? 'tab': false);
-
-		// This seems to open the file in an external app if it is not Markdown
-		leaf.openFile(file);
+		openFile(this.app, file, {newLeaf: format == 'markdown' ? 'tab': false});
 
 		// Alternate to open in external app, but not part of public API
 		// (this.app as any).openWithDefaultApp(filePath);

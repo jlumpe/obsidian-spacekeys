@@ -1,27 +1,10 @@
 import { App, Command, SuggestModal, Notice, FuzzySuggestModal, KeymapContext, MarkdownView } from 'obsidian';
 
 import { assert } from "./util";
+import { getCommandById, listCommands } from './obsidian-utils';
 
 
 const CSS_PREFIX = 'spacekeys-';
-
-
-/**
- * Get command from app by ID.
- * This doesn't seem to be an officially supported API.
- */
-function getCommandById(app: App, id: string): Command | null {
-	const result = (app as any).commands.findCommand(id);
-	return result ?? null;
-}
-
-/**
- * Get list of all defined commands, including commands not available in the current context.
- * As with the previous function, this doesn't appear to be in the official API.
- */
-function listCommands(app: App): Command[] {
-	return Object.values((app as any).commands.commands);
-}
 
 
 // Space (0x20) thru tilde (0x7F), all printable ASCII symbols

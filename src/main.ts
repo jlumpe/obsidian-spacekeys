@@ -1,4 +1,4 @@
-import { App, Plugin, PluginSettingTab, Notice, Setting, normalizePath, TFile } from 'obsidian';
+import { App, Plugin, PluginSettingTab, Notice, Setting, normalizePath, TFile, Modal } from 'obsidian';
 
 import { CommandGroup, HotkeysModal, FindCommandModal } from "commands";
 import { parseKeymapMD, parseKeymapYAML, ParseError } from 'parseconfig';
@@ -248,16 +248,58 @@ class SpacekeysSettingTab extends PluginSettingTab {
 			);
 	}
 
-	private loadKeymap(): void {
+	/**
+	 * Attempt to reload the keymap and display a modal with a detailed error message if it fails.
+	 */
+	private async loadKeymap(): Promise<void> {
 		if (!this.plugin.settings.keymapFile)
 			return;
 
-		this.plugin.loadKeymap().then(
-			() => { new Notice('Keymap reloaded'); },
-			(e: Error) => {
-				new Notice('Error');  // TODO
+		try {
+			await this.plugin.loadKeymap();
+			new Notice('Keymap reloaded');
+			return;
+
+		} catch (e) {
+			if (!(e instanceof UserError))
+				throw e;
+			this.showLoadErrorModal(e);
+		}
+	}
+
+	private showLoadErrorModal(err: UserError): void {
+		const modal = new Modal(this.app);
+		const content = modal.contentEl.createEl('p', {text: err.message});
+		modal.setTitle('Error loading keymap');
+
+		// Display more context if cause was ParseError
+		if (err.context instanceof ParseError) {
+			const { path } = err.context;
+
+			content.appendText(': ' + err.context.message);
+
+			// In the case of improper YAML content, display location
+			if (path) {
+				content.appendText(' (at ');
+				if (path.length > 0) {
+					content.createEl('code', {text: path.join('.')});
+					content.appendText(' in');
+				} else {
+					content.appendText('root element of');
+				}
+				content.appendText(' YAML content)');
 			}
-		);
+		}
+
+		content.appendText('.');
+
+		new Setting(modal.contentEl)
+			.addButton(btn => btn
+				.setButtonText('OK')
+				.setCta()
+				.onClick(evt => modal.close()));
+
+		modal.open();
 	}
 
 	/**

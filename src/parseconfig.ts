@@ -54,9 +54,11 @@ function keymapFromYAML(data: YAMLData): CommandGroup {
 	if (!isYAMLObject(data))
 		throw new ParseError('Root element not an object', [], data);
 
+	if (!('items' in data))
+		throw new ParseError('Expected "items" property', [], data);
+
 	const item = commandItemFromYAML(data, []);
-	if (!(item instanceof CommandGroup))
-		throw new ParseError('Root item must be a command group', [], data);
+	assert(item instanceof CommandGroup);
 
 	return item;
 }
@@ -127,7 +129,7 @@ export function parseKeymapYAML(lines: string): CommandGroup {
 	try {
 		data = parseYaml(lines);
 	} catch (error) {
-		throw new ParseError('YAML parse error: ' + error);
+		throw new ParseError(String(error));
 	}
 
 	return keymapFromYAML(data);

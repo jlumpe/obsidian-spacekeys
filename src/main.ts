@@ -7,13 +7,36 @@ import { UserError, userErrorString } from './util';
 import { INCLUDED_KEYMAPS_YAML } from 'include';
 
 
+// File format of keymap file in plugin settings
+type KeymapFileFormat = 'auto' | 'markdown' | 'yaml';
+
+
+/**
+ * Guess format of keymap file based on file name.
+ * @param filename
+ * @param settingsFormat - format set in plugin settings. Will use this value if supplied regardless
+ *                         of filename, unless it is "auto".
+ */
+function guessKeymapFileFormat(filename: string, settingsFormat?: KeymapFileFormat): 'markdown' | 'yaml' | null {
+	if (settingsFormat && settingsFormat != 'auto')
+		return settingsFormat;
+	if (/\.ya?ml$/.test(filename))
+		return 'yaml';
+	if (/\.md$/.test(filename))
+		return 'markdown';
+	return null;
+}
+
+
 interface SpacekeysSettings {
 	keymapFile: string | null;
+	keymapFileFormat: KeymapFileFormat;
 }
 
 
 const DEFAULT_SETTINGS: SpacekeysSettings = {
 	keymapFile: null,
+	keymapFileFormat: 'auto',
 };
 
 
@@ -59,7 +82,7 @@ export default class SpacekeysPlugin extends Plugin {
 		this.addSettingTab(new SpacekeysSettingTab(this.app, this));
 
 		if (this.settings.keymapFile) {
-			await this.loadKeymap().catch((e) => {
+			await this.loadKeymap(true).catch((e) => {
 				const msg = userErrorString(e);
 				console.log(`Spacekeys: failed to load user keymap file ${this.settings.keymapFile}: ${msg}`);
 			});
@@ -95,21 +118,37 @@ export default class SpacekeysPlugin extends Plugin {
 
 	/**
 	 * Load keymap from file specified in settings.
+	 * @param ignoreMissing - If true, don't throw error if keymap file missing or not set in config.
+	 * @returns - True if loaded successfully, false if ignoremissing=true and missing.
+	 * @throws {UserError} - Error with user message if loading fails.
 	 */
-	async loadKeymap(): Promise<void> {
+	async loadKeymap(ignoreMissing = false): Promise<boolean> {
 
 		const filename = this.settings.keymapFile;
 		let contents: string;
 
 		if (!filename)
-			throw new UserError('Keymap file not set in plugin settings');
+			if (ignoreMissing)
+				return false;
+			else
+				throw new UserError('Keymap file not set in plugin settings');
 
+		// Check file exists
 		const file = this.app.vault.getFileByPath(filename);
 		if (file === null)
-			throw new UserError('File not found');
+			if (ignoreMissing)
+				return false;
+			else
+				throw new UserError('File not found');
+
+		// Get or guess format (Markdown or YAML)
+		const format = guessKeymapFileFormat(filename, this.settings.keymapFileFormat);
+		if (format == null)
+			throw new UserError('Could not guess format of file from extension')
 
 		console.log('Spacekeys: loading keymap from ' + filename);
 
+		// Read file contents
 		try {
 			contents = await this.app.vault.cachedRead(file);
 		} catch (e) {
@@ -117,13 +156,21 @@ export default class SpacekeysPlugin extends Plugin {
 			throw new UserError('Unable to read file', {context: e});
 		}
 
+		// Parse file contents
 		try {
-			this.keymap = parseKeymapMD(contents);
+			if (format === 'markdown')
+				this.keymap = parseKeymapMD(contents);
+			else
+				this.keymap = parseKeymapYAML(contents);
+
 		} catch (e) {
+
 			console.error(e);
 			const details = e instanceof ParseError ? e.message : null;
 			throw new UserError('Parse error', {details, context: e});
 		}
+
+		return true;
 	}
 
 	onunload() {

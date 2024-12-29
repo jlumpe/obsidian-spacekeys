@@ -4,6 +4,8 @@ items:
   /: global-search:open
   ",": editor:context-menu
   "?": switcher:open
+  P: app:go-back
+  N: app:go-forward
 
   w:
     description: Workspace
@@ -52,7 +54,6 @@ items:
 
        # workspace:show-trash
 
-
   f:
     description: File
     items:
@@ -62,8 +63,6 @@ items:
       d: app:delete-file
       o: open-with-default-app:open
       O: open-with-default-app:show
-      p: markdown:add-metadata-property
-      P: markdown:edit-metadata-property
       r: editor:open-search-replace
       R: workspace:edit-file-title
       s: editor:save-file
@@ -72,19 +71,22 @@ items:
       u: outline:open-for-current
       /: editor:open-search
 
-      # markdown:clear-metadata-properties
-
-  l:
-    description: Layout
-    items:
+      p:
+        description: Properties
+        items:
+          a: markdown:add-metadata-property
+          e: markdown:edit-metadata-property
+          c: markdown:clear-metadata-properties
 
   x:
     description: Text
     items:
       b: editor:toggle-bold
-      i: editor:toggle-italics
       c: editor:toggle-code
       C: editor:toggle-comments
+      d: editor:delete-paragraph
+      F: editor:clear-formatting
+      i: editor:toggle-italics
       p: editor:insert-codeblock
       q: editor:toggle-blockquote
       s: editor:toggle-strikethrough
@@ -105,10 +107,6 @@ items:
       # editor:swap-line-down
       # editor:swap-line-up
 
-      # editor:clear-formatting
-      # editor:context-menu
-      # editor:delete-paragraph
-
       # editor:toggle-bullet-list
       # editor:toggle-checklist-status
       # editor:toggle-numbered-list
@@ -125,8 +123,14 @@ items:
       L: editor:insert-wikilink
       m: editor:insert-mathblock
       r: editor:insert-horizontal-rule
-      t: editor:insert-table
       T: editor:insert-tag
+
+      t:
+        description: Template
+        items:
+          t: insert-template
+          d: insert-current-date
+          T: insert-current-time
 
   t:
     description: Table
@@ -167,4 +171,13 @@ items:
       # window:reset-zoom
       # window:zoom-in
       # window:zoom-out
+
+  # "Workspaces" core plugin
+  l:
+    description: Layout
+    items:
+      l: workspaces:save-and-load
+      L: workspaces:load
+      o: workspaces:open-modal
+      s: workspaces:save
 

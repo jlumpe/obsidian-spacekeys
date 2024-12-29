@@ -86,11 +86,15 @@ function commandItemFromYAML(data: YAMLData, path: ParsePath): CommandItem {
 			item = new CommandGroup();
 
 			for (const key in data.items) {
+				const value = data.items[key];
+				if (value === null)
+					continue;  // Allow null values as placeholders, skip
+
 				const key2 = getKey(key);
 				if (!checkKey(key2))
 					throw error('Invalid key ' + JSON.stringify(key), ['items']);
 
-				item.children[key2] = commandItemFromYAML(data.items[key], path.concat(['items', key]));
+				item.children[key2] = commandItemFromYAML(value, path.concat(['items', key]));
 			}
 
 		} else if ('command' in data) {

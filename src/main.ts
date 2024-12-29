@@ -3,7 +3,7 @@ import { App, Plugin, PluginSettingTab, Notice, Setting, normalizePath, TFile, M
 import { CommandGroup, HotkeysModal, FindCommandModal } from "commands";
 import { parseKeymapMD, parseKeymapYAML, ParseError } from 'parseconfig';
 import { ConfirmModal, openFile } from 'obsidian-utils';
-import { UserError, userErrorString } from './util';
+import { assert, UserError, userErrorString } from './util';
 import { INCLUDED_KEYMAPS_YAML, KEYMAP_MARKDOWN_HEADER } from 'include';
 
 
@@ -271,8 +271,13 @@ class SpacekeysSettingTab extends PluginSettingTab {
 	 * Attempt to reload the keymap and display a modal with a detailed error message if it fails.
 	 */
 	private async loadKeymap(): Promise<void> {
-		if (!this.plugin.settings.keymapFile)
+		if (!this.plugin.settings.keymapFile) {
+			const keymap = getBuiltinKeymap('default');
+			assert(keymap);
+			this.plugin.keymap = keymap;
+			new Notice('Default keymap loaded');
 			return;
+		}
 
 		try {
 			await this.plugin.loadKeymap();

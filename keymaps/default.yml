@@ -42,7 +42,6 @@ items:
           T: workspace:close-others
           w: workspace:close-window
 
-       # workspace:goto-last-tab
        # workspace:goto-tab-1
        # workspace:goto-tab-2
        # workspace:goto-tab-3
@@ -51,6 +50,7 @@ items:
        # workspace:goto-tab-6
        # workspace:goto-tab-7
        # workspace:goto-tab-8
+       # workspace:goto-last-tab
 
        # workspace:show-trash
 
@@ -61,6 +61,7 @@ items:
       c: workspace:copy-path
       C: workspace:copy-url
       d: app:delete-file
+      m: file-explorer:move-file
       o: open-with-default-app:open
       O: open-with-default-app:show
       r: editor:open-search-replace
@@ -70,6 +71,15 @@ items:
       T: tag-pane:open
       u: outline:open-for-current
       /: editor:open-search
+
+      n:
+        description: New
+        items:
+          c: file-explorer:duplicate-file
+          n: file-explorer:new-file
+          N: file-explorer:new-file-in-current-tab
+          r: file-explorer:new-file-in-new-pane
+
 
       p:
         description: Properties
@@ -180,4 +190,16 @@ items:
       L: workspaces:load
       o: workspaces:open-modal
       s: workspaces:save
+
+# editor:toggle-fold-properties
+# editor:toggle-fold
+# editor:unfold-all
+# editor:fold-all
+# editor:fold-less
+# editor:fold-more
+
+# editor:follow-link
+# editor:open-link-in-new-leaf
+# editor:open-link-in-new-split
+# editor:open-link-in-new-window
 

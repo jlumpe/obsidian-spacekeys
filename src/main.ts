@@ -131,17 +131,17 @@ export default class SpacekeysPlugin extends Plugin {
 
 	/**
 	 * Load keymap from file specified in settings.
-	 * @param ignoreMissing - If true, don't throw error if keymap file missing or not set in config.
-	 * @returns - True if loaded successfully, false if ignoremissing=true and missing.
+	 * @param ignoreUnset - If true, don't throw error if keymap file not set in config.
+	 * @returns - True if loaded successfully, false if ignoreUnset=true path not set in config.
 	 * @throws {UserError} - Error with user message if loading fails.
 	 */
-	async loadKeymap(ignoreMissing = false): Promise<boolean> {
+	async loadKeymap(ignoreUnset = false): Promise<boolean> {
 
 		const filename = this.settings.keymapFile;
 		let contents: string;
 
 		if (!filename)
-			if (ignoreMissing)
+			if (ignoreUnset)
 				return false;
 			else
 				throw new UserError('Keymap file not set in plugin settings');
@@ -149,10 +149,7 @@ export default class SpacekeysPlugin extends Plugin {
 		// Check file exists
 		const file = this.app.vault.getFileByPath(filename);
 		if (file === null)
-			if (ignoreMissing)
-				return false;
-			else
-				throw new UserError('File not found');
+			throw new UserError('File not found');
 
 		// Get or guess format (Markdown or YAML)
 		const format = guessKeymapFileFormat(filename, this.settings.keymapFileFormat);

@@ -130,4 +130,10 @@ vmap <Space> :spacekeysleader<CR>
 
 ## Similar plugins
 
-TODO
+| Plugin                                                                                | Downloads | Last updated |
+| ------------------------------------------------------------------------------------- | --------- | ------------ |
+| [Leader Hotkeys](https://github.com/tgrosinger/leader-hotkeys-obsidian)               | 11,600    | 2y           |
+| [Sequence Hotkeys](https://github.com/moolmanruan/obsidian-sequence-hotkeys)          | 6,200     | 1y           |
+| [Key Sequence Shortcut](https://github.com/anselmwang/obsidian-key-sequence-shortcut) | 4,600     | 3y           |
+| [Chorded hotkeys](https://github.com/ConnorMeyers/obsidian-chorded-hotkeys)           | 4,400     | 1y           |
+| [Hotkeys Chords](https://github.com/trenta3/obsidian-hotkeys-chords)                  | 4,000     | 3y           |

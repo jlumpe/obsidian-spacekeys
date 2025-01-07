@@ -72,9 +72,9 @@ items:
       # Command mapped to "f d"
       d:
         command: app:delete-file
-		description: Delete file
+        description: Delete file
       # Command mapped to "f m"
-	  # This uses the short form, with description determined automatically
+      # This uses the short form, with description determined automatically
       m: file-explorer:move-file
 ```
 

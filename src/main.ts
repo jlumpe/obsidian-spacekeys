@@ -94,12 +94,17 @@ export default class SpacekeysPlugin extends Plugin {
 
 		this.addSettingTab(new SpacekeysSettingTab(this.app, this));
 
-		if (this.settings.keymapFile) {
-			await this.loadKeymap(true).catch((e) => {
-				const msg = userErrorString(e);
-				console.log(`Spacekeys: failed to load user keymap file ${this.settings.keymapFile}: ${msg}`);
-			});
-		}
+		// Load keymap from file if path set in settings
+		// Do this once Obsidian has finished loading, otherwise the file will be falsely reported
+		// as missing.
+		this.app.workspace.onLayoutReady(() => {
+			if (this.settings.keymapFile) {
+				this.loadKeymap(true).catch((e) => {
+					const msg = userErrorString(e);
+					console.log(`Spacekeys: failed to load user keymap file ${this.settings.keymapFile}: ${msg}`);
+				});
+			}
+		});
 	}
 
 	private registerCommands(): void {

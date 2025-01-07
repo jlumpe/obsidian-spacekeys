@@ -77,7 +77,7 @@ export async function openFile(app: App, file: string | TFile, opts: OpenFileOpt
 }
 
 
-type YesNoCallback = (result: bool) => void;
+type YesNoCallback = (result: boolean) => void;
 interface YesNoOpts {
 	default?: boolean;
 	message?: string;

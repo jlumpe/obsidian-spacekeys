@@ -1,10 +1,7 @@
 import { App, Command, SuggestModal, Notice, FuzzySuggestModal, KeymapContext, MarkdownView } from 'obsidian';
 
 import { assert } from "./util";
-import { getCommandById, listCommands } from './obsidian-utils';
-
-
-const CSS_PREFIX = 'spacekeys-';
+import { addModalTitle, CSS_PREFIX, getCommandById, listCommands } from './obsidian-utils';
 
 
 // Space (0x20) thru tilde (0x7F), all printable ASCII symbols
@@ -88,19 +85,6 @@ export class CommandGroup {
 
 		return selected;
 	}
-}
-
-
-/**
- * Add title element to SuggestModal instance.
- */
-function addModalTitle(modal: SuggestModal<any>, text?: string): HTMLElement {
-	const { modalEl } = modal;
-	const el = createEl('div', {cls: CSS_PREFIX + 'modal-title'});
-	modalEl.insertBefore(el, modalEl.firstChild);
-	if (text)
-		el.textContent = text;
-	return el;
 }
 
 

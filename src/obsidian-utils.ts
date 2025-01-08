@@ -1,4 +1,7 @@
-import { App, TFile, PaneType, Modal, FileView, WorkspaceLeaf, Workspace, Command } from 'obsidian';
+import { App, TFile, PaneType, Modal, FileView, WorkspaceLeaf, Workspace, Command, SuggestModal } from 'obsidian';
+
+
+export const CSS_PREFIX = 'spacekeys-';
 
 
 /**
@@ -139,4 +142,17 @@ export class ConfirmModal extends Modal {
 		}
 		this.close();
 	}
+}
+
+
+/**
+ * Add title element to SuggestModal instance.
+ */
+export function addModalTitle(modal: SuggestModal<any>, text?: string): HTMLElement {
+	const { modalEl } = modal;
+	const el = createEl('div', { cls: CSS_PREFIX + 'modal-title' });
+	modalEl.insertBefore(el, modalEl.firstChild);
+	if (text)
+		el.textContent = text;
+	return el;
 }

@@ -94,14 +94,12 @@ export class CommandGroup {
 /**
  * Add title element to SuggestModal instance.
  */
-function addModalTitle(modal: SuggestModal<any>, o: {text?: string, html?: string}): HTMLElement {
+function addModalTitle(modal: SuggestModal<any>, text?: string): HTMLElement {
 	const { modalEl } = modal;
 	const el = createEl('div', {cls: CSS_PREFIX + 'modal-title'});
 	modalEl.insertBefore(el, modalEl.firstChild);
-	if (o.text)
-		el.textContent = o.text;
-	if (o.html)
-		el.innerHTML = o.html;
+	if (text)
+		el.textContent = text;
 	return el;
 }
 
@@ -122,7 +120,8 @@ export class HotkeysModal extends SuggestModal<CommandSuggestion> {
 		super(app);
 
 		this.modalEl.addClass(CSS_PREFIX + 'modal');
-		addModalTitle(this, {html: '<strong>Spacekeys</strong>'});
+		const title = addModalTitle(this);
+		title.createEl('strong', {text: 'Spacekeys'});
 
 		if (this.commands.isEmpty())
 			this.emptyStateText = 'No keymap defined';
@@ -301,7 +300,9 @@ export class FindCommandModal extends FuzzySuggestModal<Command> {
 	constructor(app: App) {
 		super(app);
 
-		addModalTitle(this, {html: '<strong>Spacekeys</strong>: find command'});
+		const title = addModalTitle(this);
+		title.createEl('strong', {text: 'Spacekeys'});
+		title.appendText(': find command');
 
 		this.setInstructions([
 			{command: '↵', purpose: 'Copy ID'},

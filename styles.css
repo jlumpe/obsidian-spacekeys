@@ -1,3 +1,8 @@
+:root {
+	--spacekeys-suggestions-column-width: 250px;
+	--spacekeys-suggestions-max-height: 40%;
+}
+
 .prompt .spacekeys-modal-title {
 	border-bottom: 1px solid var(--background-secondary);
 	font-size: var(--font-ui-small);
@@ -5,43 +10,89 @@
 	padding: var(--size-4-2);
 }
 
+.spacekeys-modal-container {
+}
 
-.prompt.spacekeys-modal .suggestion-item {
-	align-items: center;
-	column-gap: 1em;
+.spacekeys-modal {
+	position: absolute;
+	bottom: 0;
+	width: 100%;
+	max-width: none;
+	min-height: 0;
+	max-height: var(--spacekeys-suggestions-max-height);
+	/* overflow: hidden; */
 
-	.spacekeys-key {
-	}
+	display: flex;
+	flex-direction: column;
 
-	.suggestion-content {
-		max-height: 2.5em;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
+	padding: var(--size-4-2);
+	gap: var(--size-4-2);
 
-	.suggestion-aux {
-		font-size: var(--font-ui-small);
-		max-width: 30%;
-	}
+	border: none;
+	border-top: var(--modal-border-width) solid var(--modal-border-color);
+	border-radius: 0;
+	box-shadow: none;
 
-	.spacekeys-command-id {
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
+	.spacekeys-suggestions {
+		flex: 1 1;
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(var(--spacekeys-suggestions-column-width), 1fr));
+		gap: var(--size-4-1) var(--size-4-2);
+		padding: 0;
+		overflow-y: auto;
 
-	&.spacekeys-group {
-		.spacekeys-key kbd {
-			color: var(--text-on-accent);
-			background: var(--interactive-accent);
-		}
-	}
+		.spacekeys-suggestion {
+			display: flex;
+			flex-direction: row;
 
-	&.spacekeys-command {
-		&.spacekeys-invalid {
-			code.spacekeys-command-id, .suggestion-title {
-				color: var(--text-error);
+			/* line-height: var(--line-height-tight); */
+			/* height: var(--line-height-tight); */
+
+			gap: var(--size-4-2);
+
+			&:hover {
+				background-color: var(--background-modifier-hover);
+			}
+
+			.spacekeys-suggestion-key {
+				flex: 0 0;
+
+				kbd {
+					/* font-size: var(--font-ui-medium); */
+					color: var(--text-accent);
+				}
+			}
+
+			.spacekeys-suggestion-label {
+				flex: 1 1;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
+
+			&.spacekeys-group .spacekeys-suggestion-label {
+				color: var(--text-accent);
+			}
+
+			&.spacekeys-group .spacekeys-suggestion-key kbd {
+				color: var(--text-on-accent);
+				background: var(--interactive-accent);
+			}
+
+			&.spacekeys-command {
+				&.spacekeys-invalid {
+					code.spacekeys-command-id, .suggestion-title {
+						color: var(--text-error);
+					}
+				}
 			}
 		}
+	}
+
+	.spacekeys-modal-status {
+		flex: 0 0;
+		font-size: var(--font-ui-medium);
+		font-family: monospace;
+		white-space: nowrap;
 	}
 }

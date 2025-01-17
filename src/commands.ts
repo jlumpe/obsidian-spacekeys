@@ -1,7 +1,6 @@
-import { App, Command, SuggestModal, Notice, FuzzySuggestModal, KeymapContext, MarkdownView } from 'obsidian';
+import { App, Command, Notice, FuzzySuggestModal, KeymapContext, MarkdownView, Modal } from 'obsidian';
 
-import { assert } from "./util";
-import { addModalTitle, CSS_PREFIX, getCommandById, listCommands } from './obsidian-utils';
+import { addModalTitle, getCommandById, listCommands } from './obsidian-utils';
 
 
 // Space (0x20) thru tilde (0x7F), all printable ASCII symbols
@@ -95,35 +94,116 @@ interface CommandSuggestion {
 }
 
 
-export class HotkeysModal extends SuggestModal<CommandSuggestion> {
+export class HotkeysModal extends Modal {
+	commands: CommandGroup;
 	execDelay = 100;
 	showInvalid = true;
-	showIds = true;
+	// showIds = true;
+	backspaceReverts = true;
+	backspaceCloses = true;
 
-	constructor(app: App, public commands: CommandGroup) {
+	suggestionsEl: HTMLElement;
+	statusEl: HTMLElement;
+
+	keySequence: Array<string>;
+
+	constructor(app: App, commands: CommandGroup) {
 		super(app);
+		this.commands = commands;
 
-		this.modalEl.addClass(CSS_PREFIX + 'modal');
-		const title = addModalTitle(this);
-		title.createEl('strong', {text: 'Spacekeys'});
+		this.containerEl.addClass('spacekeys-modal-container');
+		this.modalEl.addClass('spacekeys-modal');
 
-		if (this.commands.isEmpty())
-			this.emptyStateText = 'No keymap defined';
+		// if (this.commands.isEmpty())
+			// this.emptyStateText = 'No keymap defined';
 
-		// Capture tab key as input
-		this.scope.register([], 'Tab', (evt, ctx) => {
-			console.log('Tab');
-			this.addCharToInput('\t');
-			return false;  // Prevent default
-		});
+		this.modalEl.empty();
+		this.suggestionsEl = this.modalEl.createEl('div', {cls: 'spacekeys-suggestions'});
+		this.statusEl = this.modalEl.createEl('div', {cls: 'spacekeys-modal-status'});
+
+		this.keySequence = [];
+
+		this.scope.register(null, null, this.handleKey.bind(this));
+	}
+
+	onOpen() {
+		super.onOpen();
+		this.update();
 	}
 
 	/**
-	 * Add the given character to the input field and fire the input changed event.
+	 * Handle keypress.
 	 */
-	addCharToInput(char: string): void {
-		this.inputEl.value = this.inputEl.value + char;
-		this.inputEl.trigger('input');
+	handleKey(evt: KeyboardEvent, ctx: KeymapContext) {
+
+		if (this.backspaceReverts && ctx.key == 'Backspace') {
+			if (this.backspaceCloses && this.keySequence.length == 0) {
+				this.close();
+			} else {
+				this.keySequence.pop();
+				this.update();
+			}
+			return;
+		}
+
+		this.keySequence.push(evt.key);
+		this.update()
+	}
+
+	/**
+	 * Update after current key sequence changed.
+	 */
+	update() {
+		const item = this.getCommandItem();
+
+		if (item instanceof CommandRef) {
+			// Single command, run it
+			this.tryExec(item.command_id);
+			this.close()
+			return;
+		}
+
+		// Update status
+		let statusText: string;
+		if (this.keySequence.length == 0) {
+			statusText = '<waiting on input>';
+		} else {
+			statusText = this.keySequence.map(this.reprKey.bind(this)).join(' ');
+		}
+		this.statusEl.empty();
+		this.statusEl.appendText(statusText);
+
+		// Update suggestions
+		this.suggestionsEl.empty();
+
+		if (item === null)
+			// No valid selection
+			// TODO: error message
+			return;
+
+		const suggestions = this.getSuggestions(item);
+		for (const suggestion of suggestions) {
+			const el = this.suggestionsEl.createEl('div');
+			this.renderSuggestion(suggestion, el);
+		}
+	}
+
+	/**
+	 * Get command item for current key sequence.
+	 * TODO
+	 */
+	getCommandItem(): CommandItem | null {
+
+		let text = '';
+
+		for (const key of this.keySequence) {
+			if (key == 'Tab')
+				text += '\t';
+			else
+				text += key;
+		}
+
+		return this.commands.find(text);
 	}
 
 	/**
@@ -137,25 +217,11 @@ export class HotkeysModal extends SuggestModal<CommandSuggestion> {
 		};
 	}
 
-	getSuggestions(query: string): CommandSuggestion[] {
-
-		const selected = this.commands.find(query);
-
-		if (selected === null)
-			// No valid selection
-			return [];
-
-		if (selected instanceof CommandRef) {
-			// return [this.makeSuggestion(null, selected)];
-			// Single command, run it
-			this.tryExec(selected.command_id);
-			this.close()
-			return [];
-		}
+	getSuggestions(group: CommandGroup): CommandSuggestion[] {
 
 		const suggestions: CommandSuggestion[] = [];
 
-		for (const [key, item] of Object.entries(selected.children)) {
+		for (const [key, item] of Object.entries(group.children)) {
 			const suggestion = this.makeSuggestion(key, item);
 			if (this.showInvalid || !(item instanceof CommandRef && suggestion.command === null))
 				suggestions.push(this.makeSuggestion(key, item));
@@ -180,7 +246,16 @@ export class HotkeysModal extends SuggestModal<CommandSuggestion> {
 			return (a.key ?? '').localeCompare(b.key ?? '');
 	}
 
+	reprKey(key: string): string {
+		// TODO: modifiers
+		if (key == ' ')
+			return 'SPC';
+		return key;
+	}
+
 	renderSuggestion(suggestion: CommandSuggestion, el: HTMLElement): void {
+
+		el.addClass('spacekeys-suggestion');
 
 		let description = suggestion.item.description;
 		let command_id: string | null = null;
@@ -188,57 +263,28 @@ export class HotkeysModal extends SuggestModal<CommandSuggestion> {
 		if (suggestion.item instanceof CommandRef) {
 			// Single command
 			command_id = suggestion.item.command_id;
-			el.addClass(CSS_PREFIX + 'command');
+			el.addClass('spacekeys-command');
+			const command = getCommandById(this.app, command_id);
 
-			if (suggestion.command) {
-				description ??= suggestion.command.name;
-
+			if (command) {
+				description ??= command.name;
 			} else {
-				el.addClass(CSS_PREFIX + 'invalid');
-				description ??= suggestion.item.command_id;
+				el.addClass('spacekeys-invalid');
+				description ??= command_id;
 			}
 
 		} else {
 			// Group
-			el.addClass(CSS_PREFIX + 'group');
+			el.addClass('spacekeys-group');
 		}
 
-		// Copy structure of command palette suggestion items
-		el.addClass('mod-complex');
-		const keyEl = el.createEl('div', {cls: CSS_PREFIX + 'key'});
-		const content = el.createEl('div', {cls: 'suggestion-content'});
-		const title = content.createEl('div', {cls: 'suggestion-title'});
+		const keyEl = el.createEl('div', {cls: 'spacekeys-suggestion-key'});
+		// keyEl.appendText(this.reprKey(kp));
+		keyEl.createEl('kbd', {text: this.reprKey(suggestion.key)});
 
-		if (suggestion.key)
-			keyEl.createEl('kbd', {text: reprKey(suggestion.key)});
+		el.createEl('div', {cls: 'spacekeys-suggestion-label', text: description ?? '?'});
 
-		if (description)
-			title.createEl('span', {text: description});
-
-		// Add command ID on right
-		if (command_id && this.showIds) {
-			const aux = el.createEl('div', {cls: 'suggestion-aux'});
-			aux.createEl('code', {text: command_id, cls: CSS_PREFIX + 'command-id'});
-		}
-	}
-
-	// Override this to prevent exiting when a group is selected
-	selectSuggestion(value: CommandSuggestion, evt: MouseEvent | KeyboardEvent): void {
-		if (value.item instanceof CommandRef)
-			super.selectSuggestion(value, evt);
-		else {
-			// On group selection, just add the key to the input
-			assert(value.key);
-			this.addCharToInput(value.key);
-		}
-	}
-
-	onChooseSuggestion(value: CommandSuggestion, evt: MouseEvent | KeyboardEvent): void {
-		if (value.item instanceof CommandRef)
-			this.tryExec(value.item.command_id)
-		else
-			// This shouldn't happen
-			console.error('group selected');
+		el.setAttr('title', description);
 	}
 
 	/* Try executing the suggestion */

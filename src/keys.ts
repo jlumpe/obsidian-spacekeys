@@ -47,35 +47,36 @@ export function shouldIgnoreShift(key: string): boolean {
 
 
 export interface KeyModifiers {
-	ctrlKey: boolean;
-	shiftKey: boolean;
-	altKey: boolean;
-	metaKey: boolean;
+	ctrl: boolean;
+	shift: boolean;
+	alt: boolean;
+	meta: boolean;
 }
 
 
 /**
  * Represents a single key press, possibly combined with modifiers.
  *
- * Attributes are identical to KeyboardEvent, except:
+ * Attributes taken from KeyboardEvent:
  * - "key" is normalized to lower case IF it is more than a single character.
- * - "shiftKey" is set to false based on shouldIgnoreShiftKey(key).
+ * - Modifier key flags are renamed "shiftKey" -> "shift".
+ * - "shift" is set to false based on shouldIgnoreShiftKey(key).
  *
  * The changes are to make parsing the correct codes from the keymap definition file easier.
  */
 export class KeyPress {
 	key: string;
-	ctrlKey: boolean;
-	shiftKey: boolean;
-	altKey: boolean;
-	metaKey: boolean;
+	ctrl: boolean;
+	shift: boolean;
+	alt: boolean;
+	meta: boolean;
 
 	constructor(key: string, mods: Partial<KeyModifiers> = {}) {
 		this.key = key;
-		this.ctrlKey = mods.ctrlKey ?? false;
-		this.shiftKey = mods.shiftKey ?? false;
-		this.altKey = mods.altKey ?? false;
-		this.metaKey = mods.metaKey ?? false;
+		this.ctrl = mods.ctrl ?? false;
+		this.shift = mods.shift ?? false;
+		this.alt = mods.alt ?? false;
+		this.meta = mods.meta ?? false;
 	}
 
 	static fromEvent(evt: KeyboardEvent): KeyPress {
@@ -83,10 +84,16 @@ export class KeyPress {
 		if (key.length > 1)
 			key = key.toLowerCase();
 
-		const kp = new KeyPress(key, evt);
+		const mods: KeyModifiers = {
+			ctrl: evt.ctrlKey,
+			shift: evt.shiftKey,
+			alt: evt.altKey,
+			meta: evt.metaKey,
+		};
+		const kp = new KeyPress(key, mods);
 
 		if (shouldIgnoreShift(key))
-			kp.shiftKey = false;
+			kp.shift = false;
 
 		return kp;
 	}
@@ -109,21 +116,21 @@ export class KeyPress {
 		}
 
 		// Same key, compare by modifiers
-		if (!kp1.ctrlKey && kp2.ctrlKey)
+		if (!kp1.ctrl && kp2.ctrl)
 			return -1;
-		if (kp1.ctrlKey && !kp2.ctrlKey)
+		if (kp1.ctrl && !kp2.ctrl)
 			return 1;
-		if (!kp1.shiftKey && kp2.shiftKey)
+		if (!kp1.shift && kp2.shift)
 			return -1;
-		if (kp1.shiftKey && !kp2.shiftKey)
+		if (kp1.shift && !kp2.shift)
 			return 1;
-		if (!kp1.altKey && kp2.altKey)
+		if (!kp1.alt && kp2.alt)
 			return -1;
-		if (kp1.altKey && !kp2.altKey)
+		if (kp1.alt && !kp2.alt)
 			return 1;
-		if (!kp1.metaKey && kp2.metaKey)
+		if (!kp1.meta && kp2.meta)
 			return -1;
-		if (kp1.metaKey && !kp2.metaKey)
+		if (kp1.meta && !kp2.meta)
 			return 1;
 
 		return 0;
@@ -134,10 +141,10 @@ export class KeyPress {
 	 */
 	equals(other: KeyPress): boolean {
 		return this.key == other.key
-			&& this.ctrlKey == other.ctrlKey
-			&& this.shiftKey == other.shiftKey
-			&& this.altKey == other.altKey
-			&& this.metaKey == other.metaKey;
+			&& this.ctrl == other.ctrl
+			&& this.shift == other.shift
+			&& this.alt == other.alt
+			&& this.meta == other.meta;
 	}
 
 	/**
@@ -146,13 +153,13 @@ export class KeyPress {
 	basicRepr(): string {
 		let s = '';
 
-		if (this.ctrlKey)
+		if (this.ctrl)
 			s += 'C';
-		if (this.shiftKey && !shouldIgnoreShift(this.key))
+		if (this.shift && !shouldIgnoreShift(this.key))
 			s += 'S';
-		if (this.altKey)
+		if (this.alt)
 			s += 'A';
-		if (this.metaKey)
+		if (this.meta)
 			s += 'M';
 
 		if (s)
@@ -174,13 +181,13 @@ export class KeyPress {
 	fancyRepr(): string {
 		let s = '';
 
-		if (this.ctrlKey)
+		if (this.ctrl)
 			s += '^';
-		if (this.shiftKey && !shouldIgnoreShift(this.key))
+		if (this.shift && !shouldIgnoreShift(this.key))
 			s += '⇧';
-		if (this.altKey)
+		if (this.alt)
 			s += '⎇';
-		if (this.metaKey)
+		if (this.meta)
 			s += '⊞';  // TODO: Mac command key symbol
 
 		s += FANCY_REPRS[this.key] ?? this.key;

@@ -83,13 +83,13 @@ export function parseKey(s: string): ParseKeySuccess | ParseKeyError {
 
 		for (let i = 0; i < modstr.length; i++) {
 			if (modstr[i] == 'c')
-				mods.ctrlKey = true;
+				mods.ctrl = true;
 			else if (modstr[i] == 's')
-				mods.shiftKey = true;
+				mods.shift = true;
 			else if (modstr[i] == 'a')
-				mods.altKey = true;
+				mods.alt = true;
 			else if (modstr[i] == 'm')
-				mods.metaKey = true;
+				mods.meta = true;
 			else
 				return {
 					success: false,
@@ -109,7 +109,7 @@ export function parseKey(s: string): ParseKeySuccess | ParseKeyError {
 		return baseError;
 
 	if (shouldIgnoreShift(s))
-		mods.shiftKey = false;  // TODO: report a warning?
+		mods.shift = false;  // TODO: report a warning?
 
 	return {success: true, key: new KeyPress(s, mods)};
 }

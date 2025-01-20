@@ -8,16 +8,21 @@ import { assert, UserError, userErrorString, recursiveDefaults } from 'src/util'
 import { INCLUDED_KEYMAPS_YAML } from 'src/include';
 
 
+
 interface SpacekeysSettings {
-	keymapFile: string | null,
-	keymapFileFormat: KeymapFileFormat,
+	keymapFile: {
+		path: string | null,
+		format: KeymapFileFormat,
+	},
 	modal: HotkeysModalSettings,
 }
 
 
 const DEFAULT_SETTINGS: SpacekeysSettings = {
-	keymapFile: null,
-	keymapFileFormat: 'auto',
+	keymapFile: {
+		path: null,
+		format: 'auto',
+	},
 	modal: DEFAULT_HOTKEYSMODAL_SETTINGS,
 };
 
@@ -67,10 +72,10 @@ export default class SpacekeysPlugin extends Plugin {
 		// Do this once Obsidian has finished loading, otherwise the file will be falsely reported
 		// as missing.
 		this.app.workspace.onLayoutReady(() => {
-			if (this.settings.keymapFile) {
+			if (this.settings.keymapFile.path) {
 				this.loadKeymap(true).catch((e) => {
 					const msg = userErrorString(e);
-					console.log(`Spacekeys: failed to load user keymap file ${this.settings.keymapFile}: ${msg}`);
+					console.log(`Spacekeys: failed to load user keymap file ${this.settings.keymapFile.path}: ${msg}`);
 				});
 			}
 		});
@@ -111,7 +116,7 @@ export default class SpacekeysPlugin extends Plugin {
 	 */
 	async loadKeymap(ignoreUnset = false): Promise<boolean> {
 
-		const filename = this.settings.keymapFile;
+		const filename = this.settings.keymapFile.path;
 		let contents: string;
 
 		if (!filename)
@@ -126,7 +131,7 @@ export default class SpacekeysPlugin extends Plugin {
 			throw new UserError('File not found');
 
 		// Get or guess format (Markdown or YAML)
-		const format = guessKeymapFileFormat(filename, this.settings.keymapFileFormat);
+		const format = guessKeymapFileFormat(filename, this.settings.keymapFile.format);
 		if (format == null)
 			throw new UserError('Could not guess format of file from extension')
 
@@ -161,7 +166,8 @@ export default class SpacekeysPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		this.settings = recursiveDefaults(await this.loadData(), DEFAULT_SETTINGS);
+		const loaded = await this.loadData();
+		this.settings = loaded === null ? DEFAULT_SETTINGS : recursiveDefaults(loaded, DEFAULT_SETTINGS);
 	}
 
 	async saveSettings() {
@@ -216,10 +222,10 @@ class SpacekeysSettingTab extends PluginSettingTab {
 			.setDesc('Path to file within your vault, including extension (.md, .yml).')
 			.addText(text => text
 				.setPlaceholder('spacekeys.md')
-				.setValue(this.plugin.settings.keymapFile ?? '')
+				.setValue(this.plugin.settings.keymapFile.path ?? '')
 				.onChange(async (value: string) => {
 					value = value.trim();
-					this.plugin.settings.keymapFile = value ? normalizePath(value) : null;
+					this.plugin.settings.keymapFile.path = value ? normalizePath(value) : null;
 					await this.plugin.saveSettings();
 				}));
 
@@ -232,9 +238,9 @@ class SpacekeysSettingTab extends PluginSettingTab {
 					markdown: 'Markdown',
 					yaml: 'YAML',
 				})
-				.setValue(this.plugin.settings.keymapFileFormat)
+				.setValue(this.plugin.settings.keymapFile.format)
 				.onChange(async (value: string) => {
-					this.plugin.settings.keymapFileFormat = value as KeymapFileFormat;
+					this.plugin.settings.keymapFile.format = value as KeymapFileFormat;
 					await this.plugin.saveSettings();
 				})
 			);
@@ -282,7 +288,7 @@ class SpacekeysSettingTab extends PluginSettingTab {
 	 * Attempt to reload the keymap and display a modal with a detailed error message if it fails.
 	 */
 	private async loadKeymap(): Promise<void> {
-		if (!this.plugin.settings.keymapFile) {
+		if (!this.plugin.settings.keymapFile.path) {
 			const keymap = getBuiltinKeymap('default');
 			assert(keymap);
 			this.plugin.keymap = keymap;
@@ -342,11 +348,11 @@ class SpacekeysSettingTab extends PluginSettingTab {
 	 */
 	private async createFile(): Promise<void> {
 
-		const filePath = this.plugin.settings.keymapFile;
+		const filePath = this.plugin.settings.keymapFile.path;
 		if (!filePath)
 			return;
 
-		const format = guessKeymapFileFormat(filePath, this.plugin.settings.keymapFileFormat);
+		const format = guessKeymapFileFormat(filePath, this.plugin.settings.keymapFile.format);
 		if (format == null)
 			throw new UserError('Could not guess format of file from extension')
 
@@ -382,7 +388,7 @@ class SpacekeysSettingTab extends PluginSettingTab {
 	 * Open the keymap file for editing.
 	 */
 	private openFile(): void {
-		const filePath = this.plugin.settings.keymapFile;
+		const filePath = this.plugin.settings.keymapFile.path;
 		if (!filePath)
 			return;
 
@@ -393,7 +399,7 @@ class SpacekeysSettingTab extends PluginSettingTab {
 			return
 		}
 
-		const format = guessKeymapFileFormat(filePath, this.plugin.settings.keymapFileFormat);
+		const format = guessKeymapFileFormat(filePath, this.plugin.settings.keymapFile.format);
 
 		// TODO - close settings window
 		// TODO - check if file already open, focus to existing tab
@@ -408,7 +414,7 @@ class SpacekeysSettingTab extends PluginSettingTab {
 	 * Show file in system explorer.
 	 */
 	private showFile(): void {
-		const filePath = this.plugin.settings.keymapFile;
+		const filePath = this.plugin.settings.keymapFile.path;
 		if (!filePath)
 			return;
 

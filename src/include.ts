@@ -1,4 +1,4 @@
-import DEFAULT_KEYMAP_YAML from "../keymaps/default.yml";
+import DEFAULT_KEYMAP_YAML from "include/keymaps/default.yml";
 
 
 // Included YAML keymap definitions

@@ -147,7 +147,19 @@ function commandItemFromYAML(data: YAMLData, path: ParsePath): CommandItem {
 
 	if (typeof data === 'string') {
 		// Short form command
-		item = new CommandRef(data);
+
+		data = data.trim();
+
+		const spacePos = data.indexOf(' ');
+		if (spacePos >= 0) {
+
+			const cmd = data.substring(0, spacePos);
+			const desc = data.substring(spacePos + 1).trim();
+			item = new CommandRef(cmd, desc || null);
+
+		} else {
+			item = new CommandRef(data);
+		}
 
 	} else if (isYAMLObject(data)) {
 		if ('items' in data) {

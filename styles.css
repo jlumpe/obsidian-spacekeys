@@ -70,18 +70,20 @@
 				text-overflow: ellipsis;
 			}
 
-			&.spacekeys-group .spacekeys-suggestion-label {
-				color: var(--text-accent);
-			}
+			&.spacekeys-group {
+				.spacekeys-suggestion-label {
+					color: var(--text-accent);
+				}
 
-			&.spacekeys-group .spacekeys-suggestion-key kbd {
-				color: var(--text-on-accent);
-				background: var(--interactive-accent);
+				.spacekeys-suggestion-key kbd {
+					color: var(--text-on-accent);
+					background: var(--interactive-accent);
+				}
 			}
 
 			&.spacekeys-command {
 				&.spacekeys-invalid {
-					code.spacekeys-command-id, .suggestion-title {
+					.spacekeys-suggestion-label {
 						color: var(--text-error);
 					}
 				}

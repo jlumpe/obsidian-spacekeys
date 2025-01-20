@@ -1,7 +1,7 @@
 import { App, Command, Notice, FuzzySuggestModal, KeymapContext, MarkdownView, Modal } from 'obsidian';
 
-import { KeyPress, CommandItem, CommandRef, CommandGroup } from "./keys";
-import { addModalTitle, getCommandById, listCommands } from './obsidian-utils';
+import { KeyPress, CommandItem, CommandRef, CommandGroup } from "src/keys";
+import { addModalTitle, getCommandById, listCommands } from 'src/obsidian-utils';
 
 
 function keySeqBasicRepr(keys: KeyPress[]): string {

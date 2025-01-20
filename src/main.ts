@@ -1,11 +1,11 @@
 import { App, Plugin, PluginSettingTab, Notice, Setting, normalizePath, TFile, Modal } from 'obsidian';
 
-import { CommandGroup } from "keys";
-import { HotkeysModal, FindCommandModal } from "modals";
-import { parseKeymapMD, parseKeymapYAML, ParseError, guessKeymapFileFormat, KeymapFileFormat, makeKeymapMarkdown } from 'keymapfile';
-import { ConfirmModal, openFile } from 'obsidian-utils';
-import { assert, UserError, userErrorString } from './util';
-import { INCLUDED_KEYMAPS_YAML } from 'include';
+import { CommandGroup } from "src/keys";
+import { HotkeysModal, FindCommandModal } from "src/modals";
+import { parseKeymapMD, parseKeymapYAML, ParseError, guessKeymapFileFormat, KeymapFileFormat, makeKeymapMarkdown } from 'src/keymapfile';
+import { ConfirmModal, openFile } from 'src/obsidian-utils';
+import { assert, UserError, userErrorString } from 'src/util';
+import { INCLUDED_KEYMAPS_YAML } from 'src/include';
 
 
 interface SpacekeysSettings {

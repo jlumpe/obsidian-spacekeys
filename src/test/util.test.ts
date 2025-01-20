@@ -1,4 +1,4 @@
-import { isRegularObject, recursiveDefaults, RecursivePartial } from "../util";
+import { isRegularObject, recursiveDefaults, RecursivePartial } from "src/util";
 
 
 describe('isRegularObject', () => {

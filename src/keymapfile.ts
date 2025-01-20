@@ -1,8 +1,8 @@
 // import { parseYaml } from "obsidian";
 import YAML from "yaml";
 
-import { KeyModifiers, KeyPress, KEYCODE_REGEXP, shouldIgnoreShift, CommandRef, CommandGroup, CommandItem } from "keys";
-import { assert } from "./util";
+import { KeyModifiers, KeyPress, KEYCODE_REGEXP, shouldIgnoreShift, CommandRef, CommandGroup, CommandItem } from "src/keys";
+import { assert } from "src/util";
 
 import KEYMAP_MARKDOWN_HEADER from "../keymaps/markdown-header.md";
 

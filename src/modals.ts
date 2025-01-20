@@ -16,22 +16,36 @@ interface CommandSuggestion {
 }
 
 
+export interface HotkeysModalSettings {
+	execDelay: number,
+	showInvalid: boolean,
+	backspaceReverts: boolean,
+	backspaceCloses: boolean,
+}
+
+
+export const DEFAULT_HOTKEYSMODAL_SETTINGS: HotkeysModalSettings = {
+	execDelay: 100,
+	showInvalid: true,
+	backspaceReverts: true,
+	backspaceCloses: true,
+};
+
+
 export class HotkeysModal extends Modal {
 	commands: CommandGroup;
-	execDelay = 100;
-	showInvalid = true;
+	settings: HotkeysModalSettings;
 	// showIds = true;
-	backspaceReverts = true;
-	backspaceCloses = true;
 
 	suggestionsEl: HTMLElement;
 	statusEl: HTMLElement;
 
 	keySequence: Array<KeyPress>;
 
-	constructor(app: App, commands: CommandGroup) {
+	constructor(app: App, commands: CommandGroup, settings?: Partial<HotkeysModalSettings>) {
 		super(app);
 		this.commands = commands;
+		this.settings = Object.assign({}, DEFAULT_HOTKEYSMODAL_SETTINGS, settings);
 
 		this.containerEl.addClass('spacekeys-modal-container');
 		this.modalEl.addClass('spacekeys-modal');
@@ -54,8 +68,8 @@ export class HotkeysModal extends Modal {
 	 * Handle keypress.
 	 */
 	handleKey(evt: KeyboardEvent, ctx: KeymapContext) {
-		if (this.backspaceReverts && ctx.key == 'Backspace') {
-			if (this.backspaceCloses && this.keySequence.length == 0) {
+		if (this.settings.backspaceReverts && ctx.key == 'Backspace') {
+			if (this.settings.backspaceCloses && this.keySequence.length == 0) {
 				this.close();
 			} else {
 				this.keySequence.pop();
@@ -123,7 +137,7 @@ export class HotkeysModal extends Modal {
 				item: child.item,
 				command: child.item instanceof CommandRef ? getCommandById(this.app, child.item.command_id) : null,
 			};
-			if (this.showInvalid || !(child.item instanceof CommandRef && suggestion.command === null))
+			if (this.settings.showInvalid || !(child.item instanceof CommandRef && suggestion.command === null))
 				suggestions.push(suggestion);
 		}
 
@@ -216,7 +230,7 @@ export class HotkeysModal extends Modal {
 	execCommand(command: Command): void {
 		setTimeout(
 			() => (this.app as any).commands.executeCommand(command),
-			this.execDelay,
+			this.settings.execDelay,
 		);
 	}
 

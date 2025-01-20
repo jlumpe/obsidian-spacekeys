@@ -1,22 +1,24 @@
 import { App, Plugin, PluginSettingTab, Notice, Setting, normalizePath, TFile, Modal } from 'obsidian';
 
 import { CommandGroup } from "src/keys";
-import { HotkeysModal, FindCommandModal } from "src/modals";
+import { HotkeysModal, FindCommandModal, HotkeysModalSettings, DEFAULT_HOTKEYSMODAL_SETTINGS } from "src/modals";
 import { parseKeymapMD, parseKeymapYAML, ParseError, guessKeymapFileFormat, KeymapFileFormat, makeKeymapMarkdown } from 'src/keymapfile';
 import { ConfirmModal, openFile } from 'src/obsidian-utils';
-import { assert, UserError, userErrorString } from 'src/util';
+import { assert, UserError, userErrorString, recursiveDefaults } from 'src/util';
 import { INCLUDED_KEYMAPS_YAML } from 'src/include';
 
 
 interface SpacekeysSettings {
-	keymapFile: string | null;
-	keymapFileFormat: KeymapFileFormat;
+	keymapFile: string | null,
+	keymapFileFormat: KeymapFileFormat,
+	modal: HotkeysModalSettings,
 }
 
 
 const DEFAULT_SETTINGS: SpacekeysSettings = {
 	keymapFile: null,
 	keymapFileFormat: 'auto',
+	modal: DEFAULT_HOTKEYSMODAL_SETTINGS,
 };
 
 
@@ -79,7 +81,7 @@ export default class SpacekeysPlugin extends Plugin {
 			id: 'leader',
 			name: 'Leader',
 			callback: () => {
-				new HotkeysModal(this.app, this.keymap).open();
+				new HotkeysModal(this.app, this.keymap, this.settings.modal).open();
 			},
 		});
 
@@ -159,7 +161,7 @@ export default class SpacekeysPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		this.settings = recursiveDefaults(await this.loadData(), DEFAULT_SETTINGS);
 	}
 
 	async saveSettings() {
@@ -180,6 +182,8 @@ class SpacekeysSettingTab extends PluginSettingTab {
 		const {containerEl} = this;
 
 		containerEl.empty();
+
+		// Keymap file
 
 		new Setting(containerEl)
 			.setName('Spacekeys keymap file')
@@ -234,6 +238,44 @@ class SpacekeysSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				})
 			);
+
+		// UI settings
+
+		new Setting(containerEl)
+			.setHeading()
+			.setName('UI settings');
+
+		new Setting(containerEl)
+			.setName('Backspace undoes last keypress')
+			.setDesc(
+				'Pressing backspace while the leader modal is open undoes the last keypress. ' +
+				'You can disable this to assign commands to the backspace key.')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.modal.backspaceReverts)
+				.onChange(async (value: boolean) => {
+					this.plugin.settings.modal.backspaceReverts = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Backspace closes on empty')
+			.setDesc('Attempting to undo the last keypress when there is no input closes the leader modal.')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.modal.backspaceCloses)
+				.onChange(async (value: boolean) => {
+					this.plugin.settings.modal.backspaceCloses = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Show invalid commands')
+			.setDesc('Show key sequences with invalid command IDs. This can help with debugging your key map file.')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.modal.showInvalid)
+				.onChange(async (value: boolean) => {
+					this.plugin.settings.modal.showInvalid = value;
+					await this.plugin.saveSettings();
+				}));
 	}
 
 	/**

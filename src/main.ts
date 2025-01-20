@@ -13,6 +13,7 @@ interface SpacekeysSettings {
 	keymapFile: {
 		path: string | null,
 		format: KeymapFileFormat,
+		extend: boolean,
 	},
 	modal: HotkeysModalSettings,
 }
@@ -22,6 +23,7 @@ const DEFAULT_SETTINGS: SpacekeysSettings = {
 	keymapFile: {
 		path: null,
 		format: 'auto',
+		extend: false,
 	},
 	modal: DEFAULT_HOTKEYSMODAL_SETTINGS,
 };
@@ -145,12 +147,15 @@ export default class SpacekeysPlugin extends Plugin {
 			throw new UserError('Unable to read file', {context: e});
 		}
 
+		// Extend default?
+		const parentKeymap = this.settings.keymapFile.extend && getBuiltinKeymap('default') || undefined;
+
 		// Parse file contents
 		try {
 			if (format === 'markdown')
-				this.keymap = parseKeymapMD(contents);
+				this.keymap = parseKeymapMD(contents, parentKeymap);
 			else
-				this.keymap = parseKeymapYAML(contents);
+				this.keymap = parseKeymapYAML(contents, parentKeymap);
 
 		} catch (e) {
 
@@ -241,6 +246,17 @@ class SpacekeysSettingTab extends PluginSettingTab {
 				.setValue(this.plugin.settings.keymapFile.format)
 				.onChange(async (value: string) => {
 					this.plugin.settings.keymapFile.format = value as KeymapFileFormat;
+					await this.plugin.saveSettings();
+				})
+			);
+
+		new Setting(containerEl)
+			.setName('Extend default')
+			.setDesc('File extends the default keymap instead of defining a new one.')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.keymapFile.extend)
+				.onChange(async (value: boolean) => {
+					this.plugin.settings.keymapFile.extend = value;
 					await this.plugin.saveSettings();
 				})
 			);

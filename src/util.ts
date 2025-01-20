@@ -33,3 +33,43 @@ export class UserError extends Error {
 export function userErrorString(e: Error, alternate = '(internal error)'): string {
 	return e instanceof UserError ? e.message : alternate;
 }
+
+
+/**
+ * Check if a value is a regular object (not an array or null).
+ */
+export function isRegularObject(val: any): val is Exclude<object, Array<any> | null> {
+	return typeof val === 'object' && !Array.isArray(val) && val !== null;
+}
+
+
+/**
+ * Like Partial but also applies recursively to properties that are objects.
+ *
+ * https://stackoverflow.com/a/51365037/1775059
+ */
+export type RecursivePartial<T> = {
+	[P in keyof T]?:
+		T[P] extends (infer U)[] ? RecursivePartial<U>[] :
+		T[P] extends object | undefined ? RecursivePartial<T[P]> :
+		T[P];
+};
+
+
+/**
+ * Merge properties of values + defaults, recursing into properties.
+ */
+export function recursiveDefaults<T extends object>(values: RecursivePartial<T>, defaults: T): T {
+	const obj: Partial<T> = {};
+
+	for (const key in defaults) {
+		const dval = defaults[key];
+		if (key in values) {
+			const vval = values[key] as typeof dval;
+			obj[key] = isRegularObject(dval) ? recursiveDefaults(vval as unknown as object, dval) : vval;
+		} else
+			obj[key] = dval;
+	}
+
+	return obj as T;
+}

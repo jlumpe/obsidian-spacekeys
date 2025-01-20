@@ -2,7 +2,7 @@
 import YAML from "yaml";
 
 import { KeyModifiers, KeyPress, KEYCODE_REGEXP, shouldIgnoreShift, CommandRef, CommandGroup, CommandItem } from "src/keys";
-import { assert } from "src/util";
+import { assert, splitFirst } from "src/util";
 
 import KEYMAP_MARKDOWN_HEADER from "include/keymaps/markdown-header.md";
 
@@ -148,18 +148,8 @@ export function commandItemFromYAML(data: YAMLData, path: ParsePath, extend?: Co
 	if (typeof data === 'string') {
 		// Short form command
 
-		data = data.trim();
-
-		const spacePos = data.indexOf(' ');
-		if (spacePos >= 0) {
-
-			const cmd = data.substring(0, spacePos);
-			const desc = data.substring(spacePos + 1).trim();
-			item = new CommandRef(cmd, desc || null);
-
-		} else {
-			item = new CommandRef(data);
-		}
+		const [cmd, desc] = splitFirst(data.trim(), ' ');
+		item = new CommandRef(cmd, desc?.trim());
 
 	} else if (isYAMLObject(data)) {
 		if ('items' in data) {

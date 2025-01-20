@@ -1,4 +1,4 @@
-import { isRegularObject, recursiveDefaults, RecursivePartial } from "src/util";
+import { isRegularObject, recursiveDefaults, RecursivePartial, splitFirst } from "src/util";
 
 
 describe('isRegularObject', () => {
@@ -57,4 +57,15 @@ describe('recursiveDefaults', () => {
 		const result = recursiveDefaults(values, defaults);
 		expect(result).toEqual(expected);
 	});
+});
+
+
+describe('splitFirst', () => {
+	test('str empty', () => expect(splitFirst('', '-')).toEqual(['', null]));
+	test('str none', () => expect(splitFirst('foo', '-')).toEqual(['foo', null]));
+	test('str once', () => expect(splitFirst('foo-bar', '-')).toEqual(['foo', 'bar']));
+	test('str multi', () => expect(splitFirst('foo-bar-baz', '-')).toEqual(['foo', 'bar-baz']));
+	test('regex ws none', () => expect(splitFirst('foo-bar')).toEqual(['foo-bar', null]));
+	test('regex ws once', () => expect(splitFirst('foo  \tbar')).toEqual(['foo', 'bar']));
+	test('regex ws multi', () => expect(splitFirst('foo  \tbar baz')).toEqual(['foo', 'bar baz']));
 });

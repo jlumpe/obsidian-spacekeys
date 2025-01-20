@@ -73,3 +73,25 @@ export function recursiveDefaults<T extends object>(values: RecursivePartial<T>,
 
 	return obj as T;
 }
+
+
+/**
+ * Split a string by the first instance of a delimiter, if it exists.
+ */
+export function splitFirst(s: string, delim: string | RegExp = /\s+/): [string, string | null] {
+
+	if (delim instanceof RegExp) {
+		const result = delim.exec(s);
+		if (result)
+			return [s.substring(0, result.index), s.substring(result.index + result[0].length)];
+		else
+			return [s, null];
+
+	} else {
+		const pos = s.indexOf(delim);
+		if (pos < 0)
+			return [s, null];
+		else
+			return [s.substring(0, pos), s.substring(pos + delim.length)];
+	}
+}

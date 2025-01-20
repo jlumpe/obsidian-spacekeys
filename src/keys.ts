@@ -15,9 +15,11 @@ const BASIC_REPRS: {[key: string]: string} = {
 
 
 const FANCY_REPRS: {[key: string]: string} = {
-	' ': '␣',
+	// ' ': '␣',
+	' ': 'SPC',
 	enter: '↵',
-	tab: '⇥',
+	// tab: '⇥',
+	tab: 'TAB',
 	backspace: '⌫',
 	arrowup: '↑',
 	arrowdown: '↓',

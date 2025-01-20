@@ -203,12 +203,7 @@ export type CommandItem = CommandRef | CommandGroup;
 
 
 export class CommandRef {
-	command_id: string;
-	description: string | null;
-
-	constructor(command_id: string, description?: string) {
-		this.command_id = command_id;
-		this.description = description ?? null;
+	constructor(public command_id: string, public description: string | null = null) {
 	}
 }
 
@@ -223,8 +218,8 @@ export class CommandGroup {
 	description: string | null;
 	children: CGChild[];
 
-	constructor(description?: string) {
-		this.description = description ?? null;
+	constructor(description: string | null = null) {
+		this.description = description;
 		this.children = [];
 	}
 

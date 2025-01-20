@@ -73,7 +73,7 @@ export function parseKey(s: string): ParseKeySuccess | ParseKeyError {
 	const mods: Partial<KeyModifiers> = {};
 
 	// Process modifiers
-	if (s.contains('-')) {
+	if (s.includes('-')) {
 		const split = s.split('-');
 		if (split.length != 2 || !split[0] || !split[1])
 			return baseError;

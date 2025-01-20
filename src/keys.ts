@@ -242,7 +242,7 @@ export class CommandGroup {
 	}
 
 	/**
-	 * Remove child matching keypress.
+	 * Remove child matching keypress (if it exists).
 	 */
 	removeChild(key: KeyPress): CommandItem | null {
 		for (let i = 0; i < this.children.length; i++) {
@@ -286,5 +286,15 @@ export class CommandGroup {
 		}
 
 		return selected;
+	}
+
+	/**
+	 * Create a shallow copy of the group (down to the child CommandItems).
+	 */
+	copy(): CommandGroup {
+		const copy = new CommandGroup(this.description);
+		for (const child of this.children)
+			copy.children.push({...child});
+		return copy;
 	}
 }

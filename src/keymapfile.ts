@@ -128,21 +128,21 @@ export function parseKey(s: string): ParseKeySuccess | ParseKeyError {
 /**
  * Create keymap from parsed YAML data.
  */
-function keymapFromYAML(data: YAMLData): CommandGroup {
+function keymapFromYAML(data: YAMLData, extend?: CommandGroup): CommandGroup {
 	if (!isYAMLObject(data))
 		throw new ParseError('Root element not an object', [], data);
 
 	if (!('items' in data))
 		throw new ParseError('Expected "items" property', [], data);
 
-	const item = commandItemFromYAML(data, []);
+	const item = commandItemFromYAML(data, [], extend);
 	assert(item instanceof CommandGroup);
 
 	return item;
 }
 
 
-function commandItemFromYAML(data: YAMLData, path: ParsePath): CommandItem {
+export function commandItemFromYAML(data: YAMLData, path: ParsePath, extend?: CommandGroup): CommandItem {
 	let item: CommandItem;
 
 	if (typeof data === 'string') {
@@ -166,7 +166,7 @@ function commandItemFromYAML(data: YAMLData, path: ParsePath): CommandItem {
 			if ('command' in data)
 				parseError('Object has both "items" and "command" properties', path, data);
 
-			item = commandGroupFromYAML(data, path);
+			item = commandGroupFromYAML(data, path, extend);
 
 		} else if ('command' in data) {
 			if (typeof data.command !== 'string')
@@ -195,29 +195,45 @@ function commandItemFromYAML(data: YAMLData, path: ParsePath): CommandItem {
 }
 
 
-function commandGroupFromYAML(data: YAMLObject, path: ParsePath): CommandGroup {
+function commandGroupFromYAML(data: YAMLObject, path: ParsePath, extend?: CommandGroup): CommandGroup {
+	let group: CommandGroup;
 
-	// Allow YAML null to stand in for empty object
+	// Check items is object (allow null to stand in for empty object)
 	if (!isYAMLObject(data.items) && data.items !== null)
-		parseError('Expected an object', path, data.item, ['items']);
+		parseError('Expected group.items to be an object', path, data.item, ['items']);
 
-	const group = new CommandGroup();
+	// Check clear attribute
+	if (data.clear !== undefined && typeof data.clear !== 'boolean')
+		parseError('Expected group.clear to be a bool', path, data.clear, ['clear']);
+
+	// Extend existing
+	if (extend && data.clear !== true)
+		group = extend.copy();
+	else
+		group = new CommandGroup();
 
 	for (const keyStr in data.items) {
 		const value = data.items[keyStr];
-
-		// Allow null values as placeholders, skip
-		if (value === null)
-			continue;
 
 		// Parse keypress
 		const result = parseKey(keyStr);
 		if (!result.success)
 			parseError(result.error, path, data.items, ['items']);
+		const key = result.key;
 
-		// Parse child
-		const child = commandItemFromYAML(value, path.concat(['items', keyStr]));
-		group.setChild(result.key, child);
+		// Allow null values as placeholders, or to remove entries when extending existing group
+		if (value === null) {
+			group.removeChild(key);
+			continue;
+		}
+
+		// Should existing child group be extended?
+		const existingChild = group.getChild(key);
+		const extendChild = existingChild instanceof CommandGroup ? existingChild : undefined;
+
+		// Create/extend child
+		const child = commandItemFromYAML(value, path.concat(['items', keyStr]), extendChild);
+		group.setChild(key, child);
 	}
 
 	return group;
@@ -227,7 +243,7 @@ function commandGroupFromYAML(data: YAMLObject, path: ParsePath): CommandGroup {
 /**
  * Parse keymap from plain YAML.
  */
-export function parseKeymapYAML(lines: string): CommandGroup {
+export function parseKeymapYAML(lines: string, extend?: CommandGroup): CommandGroup {
 	let data;
 
 	try {
@@ -236,20 +252,20 @@ export function parseKeymapYAML(lines: string): CommandGroup {
 		throw new ParseError(String(error));
 	}
 
-	return keymapFromYAML(data);
+	return keymapFromYAML(data, extend);
 }
 
 
 /**
  * Parse keymap from fenced code block in Markdown file.
  */
-export function parseKeymapMD(lines: string): CommandGroup {
+export function parseKeymapMD(lines: string, extend?: CommandGroup): CommandGroup {
 	const yaml = findCodeBlock(lines);
 
 	if (!yaml)
 		throw new ParseError('No code block found');
 
-	return parseKeymapYAML(yaml);
+	return parseKeymapYAML(yaml, extend);
 }
 
 

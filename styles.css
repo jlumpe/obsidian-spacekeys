@@ -94,5 +94,9 @@
 		font-size: var(--font-ui-medium);
 		font-family: monospace;
 		white-space: nowrap;
+
+		&.spacekeys-modal-status-empty {
+			color: var(--text-muted);
+		}
 	}
 }

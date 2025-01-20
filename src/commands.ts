@@ -84,14 +84,13 @@ export class HotkeysModal extends Modal {
 		}
 
 		// Update status
-		let statusText: string;
-		if (this.keySequence.length == 0) {
-			statusText = '<waiting on input>';
-		} else {
-			statusText = keySeqBasicRepr(this.keySequence);
-		}
+		const isEmpty = this.keySequence.length == 0;
+		this.statusEl.toggleClass('spacekeys-modal-status-empty', isEmpty);
 		this.statusEl.empty();
-		this.statusEl.appendText(statusText);
+		if (this.keySequence.length == 0)
+			this.statusEl.appendText('<waiting on input>');
+		else
+			this.statusEl.appendText(keySeqBasicRepr(this.keySequence));
 
 		// Update suggestions
 		this.suggestionsEl.empty();

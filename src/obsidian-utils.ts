@@ -1,9 +1,6 @@
 import { App, TFile, PaneType, Modal, FileView, WorkspaceLeaf, Workspace, Command, SuggestModal } from 'obsidian';
 
 
-export const CSS_PREFIX = 'spacekeys-';
-
-
 /**
  * Get command from app by ID.
  * This doesn't seem to be an officially supported API.
@@ -150,7 +147,7 @@ export class ConfirmModal extends Modal {
  */
 export function addModalTitle(modal: SuggestModal<any>, text?: string): HTMLElement {
 	const { modalEl } = modal;
-	const el = createEl('div', { cls: CSS_PREFIX + 'modal-title' });
+	const el = createEl('div', { cls: 'spacekeys-modal-title' });
 	modalEl.insertBefore(el, modalEl.firstChild);
 	if (text)
 		el.textContent = text;

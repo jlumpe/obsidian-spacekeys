@@ -1,7 +1,7 @@
 import { App, Plugin, PluginSettingTab, Notice, Setting, normalizePath, TFile, Modal } from 'obsidian';
 
 import { CommandGroup } from "keys";
-import { HotkeysModal, FindCommandModal } from "commands";
+import { HotkeysModal, FindCommandModal } from "modals";
 import { parseKeymapMD, parseKeymapYAML, ParseError, guessKeymapFileFormat, KeymapFileFormat, makeKeymapMarkdown } from 'keymapfile';
 import { ConfirmModal, openFile } from 'obsidian-utils';
 import { assert, UserError, userErrorString } from './util';

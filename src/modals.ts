@@ -21,6 +21,7 @@ export interface HotkeysModalSettings {
 	showInvalid: boolean,
 	backspaceReverts: boolean,
 	backspaceCloses: boolean,
+	trimDescriptions: boolean,
 }
 
 
@@ -29,6 +30,7 @@ export const DEFAULT_HOTKEYSMODAL_SETTINGS: HotkeysModalSettings = {
 	showInvalid: true,
 	backspaceReverts: true,
 	backspaceCloses: true,
+	trimDescriptions: true,
 };
 
 
@@ -177,7 +179,8 @@ export class HotkeysModal extends Modal {
 			el.addClass('spacekeys-command');
 
 			if (suggestion.command) {
-				description ??= suggestion.command.name;
+				if (!description)
+					description = this.getCommandDescription(suggestion.command.name);
 			} else {
 				el.addClass('spacekeys-invalid');
 				description ??= suggestion.item.command_id;
@@ -194,6 +197,14 @@ export class HotkeysModal extends Modal {
 		el.createEl('div', {cls: 'spacekeys-suggestion-label', text: description ?? '?'});
 
 		el.setAttr('title', description);
+	}
+
+	getCommandDescription(cmdname: string): string {
+		// Remove part of command name before colon
+		if (this.settings.trimDescriptions)
+			return /^.+:\s*(.*)/.exec(cmdname)?.[1] ?? cmdname;
+		else
+			return cmdname;
 	}
 
 	/**

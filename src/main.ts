@@ -290,6 +290,19 @@ class SpacekeysSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
+			.setName('Shorten command labels')
+			.setDesc(
+				'Hide the part of the command description before the colon (if any). ' +
+				'This is typically redundant. Does not apply to command descriptions set explicitly ' +
+				'in the keymap file.')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.modal.trimDescriptions)
+				.onChange(async (value: boolean) => {
+					this.plugin.settings.modal.trimDescriptions = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
 			.setName('Show invalid commands')
 			.setDesc('Show key sequences with invalid command IDs. This can help with debugging your key map file.')
 			.addToggle(toggle => toggle

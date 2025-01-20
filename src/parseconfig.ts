@@ -71,15 +71,16 @@ export function parseKey(s: string): ParseKeySuccess | ParseKeyError {
 		return {success: true, key: new KeyPress('-')};
 
 	const mods: Partial<KeyModifiers> = {};
+	let key: string;
 
 	// Process modifiers
-	if (s.includes('-')) {
-		const split = s.split('-');
-		if (split.length != 2 || !split[0] || !split[1])
-			return baseError;
+	const dashPos = s.indexOf('-');
+	if (dashPos >= 0) {
+		const modstr = s.substring(0, dashPos);
+		key = s.substring(dashPos + 1).toLowerCase();
 
-		const modstr = split[0].toLowerCase();
-		s = split[1];
+		if (!key || !modstr)
+			return baseError;
 
 		for (let i = 0; i < modstr.length; i++) {
 			if (modstr[i] == 'c')
@@ -96,22 +97,24 @@ export function parseKey(s: string): ParseKeySuccess | ParseKeyError {
 					error: 'Invalid modifier code: ' + modstr[i].toUpperCase(),
 				};
 		}
+	} else {
+		key = s;
 	}
 
 	// Normalize case if not single symbol
-	if (s.length > 1)
-		s = s.toLowerCase();
+	if (key.length > 1)
+		key = key.toLowerCase();
 
 	// Apply aliases
-	s = KEY_ALIASES[s] ?? s;
+	key = KEY_ALIASES[key] ?? key;
 
-	if (!KEYCODE_REGEXP.test(s))
+	if (!KEYCODE_REGEXP.test(key))
 		return baseError;
 
-	if (shouldIgnoreShift(s))
+	if (shouldIgnoreShift(key))
 		mods.shift = false;  // TODO: report a warning?
 
-	return {success: true, key: new KeyPress(s, mods)};
+	return {success: true, key: new KeyPress(key, mods)};
 }
 
 

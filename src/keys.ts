@@ -1,5 +1,5 @@
 // This *should* match any valid key code (case-insensitive).
-export const KEYCODE_REGEXP = /.|[a-z]+|f[1-9]|f1[0-2]/i;
+export const KEYCODE_REGEXP = /^(.|[a-z]+|f[1-9]|f1[0-2])$/i;
 
 
 const BASIC_REPRS: {[key: string]: string} = {

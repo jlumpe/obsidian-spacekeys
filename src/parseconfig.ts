@@ -1,4 +1,5 @@
-import { parseYaml } from "obsidian";
+// import { parseYaml } from "obsidian";
+import YAML from "yaml";
 
 import { KeyModifiers, KeyPress, KEYCODE_REGEXP, shouldIgnoreShift, CommandRef, CommandGroup, CommandItem } from "keys";
 import { assert } from "./util";
@@ -208,7 +209,7 @@ export function parseKeymapYAML(lines: string): CommandGroup {
 	let data;
 
 	try {
-		data = parseYaml(lines);
+		data = YAML.parse(lines);
 	} catch (error) {
 		throw new ParseError(String(error));
 	}

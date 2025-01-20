@@ -95,10 +95,12 @@ export class HotkeysModal extends Modal {
 		// Update suggestions
 		this.suggestionsEl.empty();
 
-		if (item === null)
+		if (item === null) {
 			// No valid selection
-			// TODO: error message
+			this.invalidKeys();
+			this.close();
 			return;
+		}
 
 		const suggestions = this.getSuggestions(item);
 		for (const suggestion of suggestions) {
@@ -216,6 +218,17 @@ export class HotkeysModal extends Modal {
 			() => (this.app as any).commands.executeCommand(command),
 			this.execDelay,
 		);
+	}
+
+	/**
+	 * Create notice of invalid/unassigned key sequence.
+	 */
+	invalidKeys(): void {
+		const keyseq = keySeqBasicRepr(this.keySequence);
+		const frag = document.createDocumentFragment();
+		frag.appendText('Invalid key sequence: ');
+		frag.createEl('code', {text: keyseq});
+		new Notice(frag);
 	}
 }
 

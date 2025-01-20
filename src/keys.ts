@@ -231,7 +231,7 @@ export class CommandGroup {
 	 * Add child command/group given next key in sequence.
 	 * If a child already exists for the given keypress, overwrite it.
 	 */
-	addChild(key: KeyPress, item: CommandItem) {
+	setChild(key: KeyPress, item: CommandItem) {
 		for (let i = 0; i < this.children.length; i++) {
 			if (this.children[i].key.equals(key)) {
 				this.children[i] = {key: key, item: item};

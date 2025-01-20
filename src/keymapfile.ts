@@ -217,7 +217,7 @@ function commandGroupFromYAML(data: YAMLObject, path: ParsePath): CommandGroup {
 
 		// Parse child
 		const child = commandItemFromYAML(value, path.concat(['items', keyStr]));
-		group.addChild(result.key, child);
+		group.setChild(result.key, child);
 	}
 
 	return group;

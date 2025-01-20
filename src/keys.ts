@@ -81,14 +81,63 @@ export class KeyPress {
 	static fromEvent(evt: KeyboardEvent): KeyPress {
 		let key = evt.key;
 		if (key.length > 1)
-			key = key.toUpperCase();
+			key = key.toLowerCase();
 
-		const kp = new KeyPress(evt.key, evt);
+		const kp = new KeyPress(key, evt);
 
 		if (shouldIgnoreShift(key))
 			kp.shiftKey = false;
 
 		return kp;
+	}
+
+	/**
+	 * Compare two keypresses for the purpose of sorting.
+	 */
+	static compare(kp1: KeyPress, kp2: KeyPress): number {
+		if (kp1.key != kp2.key) {
+			// Sort "special" keys before those corresponding to printable characters.
+			const isPrintable1 = shouldIgnoreShift(kp1.key);
+			const isPrintable2 = shouldIgnoreShift(kp2.key);
+
+			if (!isPrintable1 && isPrintable2)
+				return -1;
+			if (isPrintable1 && !isPrintable2)
+				return 1;
+
+			return kp1.key.localeCompare(kp2.key);
+		}
+
+		// Same key, compare by modifiers
+		if (!kp1.ctrlKey && kp2.ctrlKey)
+			return -1;
+		if (kp1.ctrlKey && !kp2.ctrlKey)
+			return 1;
+		if (!kp1.shiftKey && kp2.shiftKey)
+			return -1;
+		if (kp1.shiftKey && !kp2.shiftKey)
+			return 1;
+		if (!kp1.altKey && kp2.altKey)
+			return -1;
+		if (kp1.altKey && !kp2.altKey)
+			return 1;
+		if (!kp1.metaKey && kp2.metaKey)
+			return -1;
+		if (kp1.metaKey && !kp2.metaKey)
+			return 1;
+
+		return 0;
+	}
+
+	/**
+	 * Check if this keypress is equal to another.
+	 */
+	equals(other: KeyPress): boolean {
+		return this.key == other.key
+			&& this.ctrlKey == other.ctrlKey
+			&& this.shiftKey == other.shiftKey
+			&& this.altKey == other.altKey
+			&& this.metaKey == other.metaKey;
 	}
 
 	/**
@@ -180,7 +229,7 @@ export class CommandGroup {
 	 */
 	addChild(key: KeyPress, item: CommandItem) {
 		for (let i = 0; i < this.children.length; i++) {
-			if (this.children[i].key == key) {
+			if (this.children[i].key.equals(key)) {
 				this.children[i] = {key: key, item: item};
 				return;
 			}
@@ -193,7 +242,7 @@ export class CommandGroup {
 	 */
 	removeChild(key: KeyPress): CommandItem | null {
 		for (let i = 0; i < this.children.length; i++) {
-			if (this.children[i].key == key)
+			if (this.children[i].key.equals(key))
 				return this.children.splice(i, 1)[0].item;
 		}
 		return null;
@@ -204,7 +253,7 @@ export class CommandGroup {
 	 */
 	getChild(key: KeyPress): CommandItem | null {
 		for (const child of this.children) {
-			if (child.key == key)
+			if (child.key.equals(key))
 				return child.item;
 		}
 		return null;

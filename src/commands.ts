@@ -1,94 +1,16 @@
 import { App, Command, Notice, FuzzySuggestModal, KeymapContext, MarkdownView, Modal } from 'obsidian';
 
+import { KeyPress, CommandItem, CommandRef, CommandGroup } from "./keys";
 import { addModalTitle, getCommandById, listCommands } from './obsidian-utils';
 
 
-// Space (0x20) thru tilde (0x7F), all printable ASCII symbols
-const KEY_REGEXP = /^[ -~\t]$/;
-
-
-export function checkKey(key: string): boolean {
-	return KEY_REGEXP.test(key);
-}
-
-
-const KEY_REPRS: {[key: string]: string} = {
-	' ': 'SPC',
-	'\t': 'TAB',
-};
-
-
-function reprKey(key: string): string {
-	return KEY_REPRS[key] ?? key;
-}
-
-
-export type CommandItem = CommandRef | CommandGroup;
-
-
-export class CommandRef {
-	command_id: string;
-	description: string | null;
-
-	constructor(command_id: string, description?: string) {
-		this.command_id = command_id;
-		this.description = description ?? null;
-	}
-}
-
-
-export class CommandGroup {
-	description: string | null;
-	children: { [key: string]: CommandItem };
-
-	constructor(description?: string) {
-		this.description = description ?? null;
-		this.children = {};
-	}
-
-	isEmpty(): boolean {
-		for (const prop in this.children)
-			return false;
-		return true;
-	}
-
-	/* Add child command/group given next key in sequence. */
-	addChild<T extends CommandItem>(key: string, item: T): T {
-		if (!checkKey(key))
-			throw new Error('Invalid key ' + JSON.stringify(key));
-		this.children[key] = item;
-		return item;
-	}
-
-	/**
-	 *  Get the item for the given sequence of keys.
-	 * @param keys - Sequence of key characters.
-	 * @param strict - If we reach a CommandRef before running out of key characters, return null
-	 *                 (strict=true) or the CommandRef (strict=false).
-	 */
-	find(keys: string, strict = false): CommandItem | null {
-		let selected: CommandItem = this;
-		let child: CommandItem | undefined;
-
-		for (const key of keys) {
-			if (selected instanceof CommandRef)
-				return strict ? null : selected;
-
-			child = selected.children[key];
-
-			if (child === undefined)
-				return null;
-
-			selected = child;
-		}
-
-		return selected;
-	}
+function keySeqBasicRepr(keys: KeyPress[]): string {
+	return keys.map(kp => kp.basicRepr()).join(' ');
 }
 
 
 interface CommandSuggestion {
-	key: string | null;
+	key: KeyPress;
 	item: CommandItem;
 	command: Command | null;
 }
@@ -105,7 +27,7 @@ export class HotkeysModal extends Modal {
 	suggestionsEl: HTMLElement;
 	statusEl: HTMLElement;
 
-	keySequence: Array<string>;
+	keySequence: Array<KeyPress>;
 
 	constructor(app: App, commands: CommandGroup) {
 		super(app);
@@ -113,9 +35,6 @@ export class HotkeysModal extends Modal {
 
 		this.containerEl.addClass('spacekeys-modal-container');
 		this.modalEl.addClass('spacekeys-modal');
-
-		// if (this.commands.isEmpty())
-			// this.emptyStateText = 'No keymap defined';
 
 		this.modalEl.empty();
 		this.suggestionsEl = this.modalEl.createEl('div', {cls: 'spacekeys-suggestions'});
@@ -135,7 +54,6 @@ export class HotkeysModal extends Modal {
 	 * Handle keypress.
 	 */
 	handleKey(evt: KeyboardEvent, ctx: KeymapContext) {
-
 		if (this.backspaceReverts && ctx.key == 'Backspace') {
 			if (this.backspaceCloses && this.keySequence.length == 0) {
 				this.close();
@@ -146,15 +64,17 @@ export class HotkeysModal extends Modal {
 			return;
 		}
 
-		this.keySequence.push(evt.key);
-		this.update()
+		this.keySequence.push(KeyPress.fromEvent(evt));
+		this.update();
+
+		evt.preventDefault();
 	}
 
 	/**
 	 * Update after current key sequence changed.
 	 */
 	update() {
-		const item = this.getCommandItem();
+		const item = this.commands.find(this.keySequence);
 
 		if (item instanceof CommandRef) {
 			// Single command, run it
@@ -168,7 +88,7 @@ export class HotkeysModal extends Modal {
 		if (this.keySequence.length == 0) {
 			statusText = '<waiting on input>';
 		} else {
-			statusText = this.keySequence.map(this.reprKey.bind(this)).join(' ');
+			statusText = keySeqBasicRepr(this.keySequence);
 		}
 		this.statusEl.empty();
 		this.statusEl.appendText(statusText);
@@ -189,42 +109,21 @@ export class HotkeysModal extends Modal {
 	}
 
 	/**
-	 * Get command item for current key sequence.
-	 * TODO
+	 * Get list of next suggested keypress based on currently selected command group.
+	 * Filters out invalid commands (if !this.showInvalid) and sorts.
 	 */
-	getCommandItem(): CommandItem | null {
-
-		let text = '';
-
-		for (const key of this.keySequence) {
-			if (key == 'Tab')
-				text += '\t';
-			else
-				text += key;
-		}
-
-		return this.commands.find(text);
-	}
-
-	/**
-	 * Make a suggestion object for the given key and command/group
-	 */
-	makeSuggestion(key: string | null, item: CommandItem): CommandSuggestion {
-		return {
-			key: key,
-			item: item,
-			command: item instanceof CommandRef ? getCommandById(this.app, item.command_id) : null,
-		};
-	}
-
 	getSuggestions(group: CommandGroup): CommandSuggestion[] {
 
 		const suggestions: CommandSuggestion[] = [];
 
-		for (const [key, item] of Object.entries(group.children)) {
-			const suggestion = this.makeSuggestion(key, item);
-			if (this.showInvalid || !(item instanceof CommandRef && suggestion.command === null))
-				suggestions.push(this.makeSuggestion(key, item));
+		for (const child of group.children) {
+			const suggestion = {
+				key: child.key,
+				item: child.item,
+				command: child.item instanceof CommandRef ? getCommandById(this.app, child.item.command_id) : null,
+			};
+			if (this.showInvalid || !(child.item instanceof CommandRef && suggestion.command === null))
+				suggestions.push(suggestion);
 		}
 
 		suggestions.sort(this.compareSuggestions.bind(this));
@@ -233,7 +132,7 @@ export class HotkeysModal extends Modal {
 
 	/**
 	 * Compare two suggestions for sorting.
-	 * Sorts groups before commands, then by key alphabetically.
+	 * Sorts groups before commands, then by key according to KeyPress.compare.
 	 */
 	compareSuggestions(a: CommandSuggestion, b: CommandSuggestion): number {
 		const a_group = a.item instanceof CommandGroup;
@@ -243,34 +142,30 @@ export class HotkeysModal extends Modal {
 		else if (b_group && !a_group)
 			return 1;
 		else
-			return (a.key ?? '').localeCompare(b.key ?? '');
+			return KeyPress.compare(a.key, b.key);
 	}
 
-	reprKey(key: string): string {
-		// TODO: modifiers
-		if (key == ' ')
-			return 'SPC';
-		return key;
+	renderKey(key: KeyPress, el: HTMLElement) {
+		const repr = key.fancyRepr();
+		el.addClass('spacekeys-suggestion-key');
+		// el.appendText(repr);
+		el.createEl('kbd', {text: repr});
 	}
 
 	renderSuggestion(suggestion: CommandSuggestion, el: HTMLElement): void {
-
 		el.addClass('spacekeys-suggestion');
 
 		let description = suggestion.item.description;
-		let command_id: string | null = null;
 
 		if (suggestion.item instanceof CommandRef) {
 			// Single command
-			command_id = suggestion.item.command_id;
 			el.addClass('spacekeys-command');
-			const command = getCommandById(this.app, command_id);
 
-			if (command) {
-				description ??= command.name;
+			if (suggestion.command) {
+				description ??= suggestion.command.name;
 			} else {
 				el.addClass('spacekeys-invalid');
-				description ??= command_id;
+				description ??= suggestion.item.command_id;
 			}
 
 		} else {
@@ -278,16 +173,17 @@ export class HotkeysModal extends Modal {
 			el.addClass('spacekeys-group');
 		}
 
-		const keyEl = el.createEl('div', {cls: 'spacekeys-suggestion-key'});
-		// keyEl.appendText(this.reprKey(kp));
-		keyEl.createEl('kbd', {text: this.reprKey(suggestion.key)});
+		const keyEl = el.createEl('div');
+		this.renderKey(suggestion.key, keyEl);
 
 		el.createEl('div', {cls: 'spacekeys-suggestion-label', text: description ?? '?'});
 
 		el.setAttr('title', description);
 	}
 
-	/* Try executing the suggestion */
+	/**
+	 * Try executing the suggestion.
+	 */
 	tryExec(command_id: string): void {
 		const command = getCommandById(this.app, command_id);
 		if (command)
@@ -296,7 +192,9 @@ export class HotkeysModal extends Modal {
 			this.invalidCommand(command_id);
 	}
 
-	/* Create notice of invalid command ID */
+	/**
+	 * Create notice of invalid command ID
+	 */
 	invalidCommand(command_id: string): void {
 		const id_esc = JSON.stringify(command_id);
 		const frag = document.createDocumentFragment();

@@ -1,5 +1,5 @@
 import { KeyPress, KeyModifiers } from "keys";
-import { parseKey } from "parseconfig";
+import { parseKey } from "keymapfile";
 
 
 function testParseKey(s: string, key: string, mods?: Partial<KeyModifiers>): void {

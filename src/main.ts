@@ -2,31 +2,10 @@ import { App, Plugin, PluginSettingTab, Notice, Setting, normalizePath, TFile, M
 
 import { CommandGroup } from "keys";
 import { HotkeysModal, FindCommandModal } from "commands";
-import { parseKeymapMD, parseKeymapYAML, ParseError } from 'parseconfig';
+import { parseKeymapMD, parseKeymapYAML, ParseError, guessKeymapFileFormat, KeymapFileFormat, makeKeymapMarkdown } from 'keymapfile';
 import { ConfirmModal, openFile } from 'obsidian-utils';
 import { assert, UserError, userErrorString } from './util';
-import { INCLUDED_KEYMAPS_YAML, KEYMAP_MARKDOWN_HEADER } from 'include';
-
-
-// File format of keymap file in plugin settings
-type KeymapFileFormat = 'auto' | 'markdown' | 'yaml';
-
-
-/**
- * Guess format of keymap file based on file name.
- * @param filename
- * @param settingsFormat - format set in plugin settings. Will use this value if supplied regardless
- *                         of filename, unless it is "auto".
- */
-function guessKeymapFileFormat(filename: string, settingsFormat?: KeymapFileFormat): 'markdown' | 'yaml' | null {
-	if (settingsFormat && settingsFormat != 'auto')
-		return settingsFormat;
-	if (/\.ya?ml$/.test(filename))
-		return 'yaml';
-	if (/\.md$/.test(filename))
-		return 'markdown';
-	return null;
-}
+import { INCLUDED_KEYMAPS_YAML } from 'include';
 
 
 interface SpacekeysSettings {
@@ -63,19 +42,6 @@ function getBuiltinKeymap(name: string): CommandGroup | null {
 	}
 
 	return null;
-}
-
-
-/**
- * Create Markdown file wrapping keymap YAML with a default header.
- * @param yaml - YAML keymap definition as string.
- */
-function makeKeymapMarkdown(yaml: string): string {
-	let markdown = KEYMAP_MARKDOWN_HEADER;
-	markdown += '```yaml\n';
-	markdown += yaml;
-	markdown += '\n```\n';
-	return markdown;
 }
 
 

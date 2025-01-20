@@ -4,6 +4,8 @@ import YAML from "yaml";
 import { KeyModifiers, KeyPress, KEYCODE_REGEXP, shouldIgnoreShift, CommandRef, CommandGroup, CommandItem } from "keys";
 import { assert } from "./util";
 
+import KEYMAP_MARKDOWN_HEADER from "../keymaps/markdown-header.md";
+
 
 type YAMLObject = {[key: string]: YAMLData};
 type YAMLData = YAMLObject | Array<YAMLData> | string | number | null;
@@ -249,4 +251,38 @@ function findCodeBlock(lines: string): string | null {
 	}
 
 	return null;
+}
+
+
+// File format of keymap file in plugin settings
+export type KeymapFileFormat = 'auto' | 'markdown' | 'yaml';
+
+
+/**
+ * Guess format of keymap file based on file name.
+ * @param filename
+ * @param settingsFormat - format set in plugin settings. Will use this value if supplied regardless
+ *                         of filename, unless it is "auto".
+ */
+export function guessKeymapFileFormat(filename: string, settingsFormat?: KeymapFileFormat): 'markdown' | 'yaml' | null {
+	if (settingsFormat && settingsFormat != 'auto')
+		return settingsFormat;
+	if (/\.ya?ml$/.test(filename))
+		return 'yaml';
+	if (/\.md$/.test(filename))
+		return 'markdown';
+	return null;
+}
+
+
+/**
+ * Create Markdown file wrapping keymap YAML with a default header.
+ * @param yaml - YAML keymap definition as string.
+ */
+export function makeKeymapMarkdown(yaml: string): string {
+	let markdown = KEYMAP_MARKDOWN_HEADER;
+	markdown += '```yaml\n';
+	markdown += yaml;
+	markdown += '\n```\n';
+	return markdown;
 }

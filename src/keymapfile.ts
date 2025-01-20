@@ -34,6 +34,10 @@ export class ParseError extends Error {
 	}
 }
 
+function parseError(msg: string, path: ParsePath, data?: YAMLData, extraPath?: ParsePath): never {
+	throw new ParseError(msg, extraPath ? path.concat(extraPath) : path, data);
+}
+
 
 /**
  * Aliases strings when parsing key codes.
@@ -141,10 +145,6 @@ function keymapFromYAML(data: YAMLData): CommandGroup {
 function commandItemFromYAML(data: YAMLData, path: ParsePath): CommandItem {
 	let item: CommandItem;
 
-	function error(msg: string, extrapath?: ParsePath, dat: YAMLData = data) {
-		return new ParseError(msg, extrapath ? path.concat(extrapath) : path, dat);
-	}
-
 	if (typeof data === 'string') {
 		// Short form command
 		item = new CommandRef(data);
@@ -152,55 +152,63 @@ function commandItemFromYAML(data: YAMLData, path: ParsePath): CommandItem {
 	} else if (isYAMLObject(data)) {
 		if ('items' in data) {
 			if ('command' in data)
-				throw error('Object has both "items" and "command" properties');
+				parseError('Object has both "items" and "command" properties', path, data);
 
-			// Allow YAML null to stand in for empty object
-			if (!isYAMLObject(data.items) && data.items !== null)
-				throw error('Expected an object', ['items'], data.items);
-
-			item = new CommandGroup();
-
-			for (const keyStr in data.items) {
-				const value = data.items[keyStr];
-
-				// Allow null values as placeholders, skip
-				if (value === null)
-					continue;
-
-				// Parse keypress
-				const result = parseKey(keyStr);
-				if (!result.success)
-					throw error(result.error, ['item'], data.items);
-
-				// Parse child
-				const child = commandItemFromYAML(value, path.concat(['items', keyStr]));
-				item.addChild(result.key, child);
-			}
+			item = commandGroupFromYAML(data, path);
 
 		} else if ('command' in data) {
 			if (typeof data.command !== 'string')
-				throw error('Expected string', ['command'], data.command);
+				parseError('Expected string', path, data.command, ['command']);
 
 			item = new CommandRef(data.command);
 
 		} else {
-			throw error('Object must have either "items" or "command" property');
+			parseError('Object must have either "items" or "command" property', path, data);
 		}
 
 		if ("description" in data) {
 			if (typeof data.description !== 'string' && data.description !== null)
-				throw error('Expected string or null', ['description'], data.description);
+				parseError('Expected string or null', path, data.description, ['description']);
 			item.description = data.description;
 		}
 
 	} else {
-		throw error('Expected string or object');
+		throw parseError('Expected string or object', path, data);
 	}
 
 	if (item instanceof CommandRef && !item.command_id)
-		throw error('Command ID cannot be empty', ['command'], item.command_id);
+		throw parseError('Command ID cannot be empty', path, item.command_id, ['command']);
 
 	return item;
+}
+
+
+function commandGroupFromYAML(data: YAMLObject, path: ParsePath): CommandGroup {
+
+	// Allow YAML null to stand in for empty object
+	if (!isYAMLObject(data.items) && data.items !== null)
+		parseError('Expected an object', path, data.item, ['items']);
+
+	const group = new CommandGroup();
+
+	for (const keyStr in data.items) {
+		const value = data.items[keyStr];
+
+		// Allow null values as placeholders, skip
+		if (value === null)
+			continue;
+
+		// Parse keypress
+		const result = parseKey(keyStr);
+		if (!result.success)
+			parseError(result.error, path, data.items, ['items']);
+
+		// Parse child
+		const child = commandItemFromYAML(value, path.concat(['items', keyStr]));
+		group.addChild(result.key, child);
+	}
+
+	return group;
 }
 
 

@@ -15,7 +15,7 @@ The keymap is customizable and can include any command that can be assigned a tr
 
 ## Demo
 
-![Group vs command](https://raw.githubusercontent.com/jlumpe/obsidian-spacekeys/master/resources/demo.gif)
+![Demo](https://raw.githubusercontent.com/jlumpe/obsidian-spacekeys/master/resources/demo.gif)
 
 1. <kbd>w</kbd> <kbd>N</kbd>: **W**orkspace → **N**ew tab
 1. <kbd>f</kbd> <kbd>n</kbd> <kbd>n</kbd>: **F**ile → **N**ew → Create **n**ew note
@@ -33,7 +33,9 @@ This plugin is not yet available to be installed through the app and will need t
 
 All functionality is accessed through a single "leader" hotkey. This is a standard Obsidian hotkey that you will need to assign yourself (in accordance with Obsidian's plugin guidelines, Spacekeys does not define any hotkeys by default). Navigate to the "Hotkeys" section of Obsidian's settings and use the search function to find the `Spacekeys: Leader` command. A good choice is <kbd>Ctrl</kbd> + <kbd>M</kbd> (which is not bound by default).
 
-After activating the leader hotkey you may immediately enter the key sequence for the desired command if you have it memorized. To aid in discovering commands, a pop-up menu is also displayed showing valid initial keys for all defined sequences. Items with a colored/highlighted key represent groups of commands with a common prefix and are displayed first. The rest are single commands. In the following screenshot, pressing <kbd>Tab</kbd> will immediately execute the "Focus on last note" command. Pressing <kbd>x</kbd> will update the menu to display the next possible key for all defined sequences starting with <kbd>x</kbd> (which are all text-related).
+After activating the leader hotkey you may immediately enter the key sequence for the desired command if you have it memorized. To aid in discovering commands, a pop-up menu is also displayed showing valid initial keys for all defined sequences. Items with a highlighted label represent groups of commands with a common prefix. The rest are single commands.
+
+In the following screenshot, pressing <kbd>Space</kbd> will immediately execute the "Open command palette" command. Pressing <kbd>t</kbd> will update the menu to display the next possible key for all defined sequences starting with <kbd>t</kbd> (which are all table-related).
 
 ![Group vs command](https://raw.githubusercontent.com/jlumpe/obsidian-spacekeys/master/resources/group-vs-command.png)
 

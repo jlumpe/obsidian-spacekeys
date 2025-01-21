@@ -40,7 +40,7 @@ function parseError(msg: string, path: ParsePath, data?: YAMLData, extraPath?: P
 
 
 /**
- * Aliases strings when parsing key codes.
+ * Aliases when parsing key codes.
  */
 const KEY_ALIASES: {[key: string]: string} = {
 	space: ' ',
@@ -122,6 +122,40 @@ export function parseKey(s: string): ParseKeySuccess | ParseKeyError {
 		mods.shift = false;  // TODO: report a warning?
 
 	return {success: true, key: new KeyPress(key, mods)};
+}
+
+
+/**
+ * Preferred key code aliases for unparseKey()
+ */
+const REVERSE_ALIASES: {[key: string]: string} = {
+	' ': 'spc',
+	arrowup: 'up',
+	arrowdown: 'down',
+	arrowleft: 'left',
+	arrowright: 'right',
+};
+
+
+/**
+ * Get key code string from KeyPress instance.
+ *
+ * The return value, when passed to parseKey(), should yield the original KeyPress instance.
+ */
+export function unparseKey(kp: KeyPress): string {
+	const key = REVERSE_ALIASES[kp.key] ?? kp.key;
+
+	let modstr = '';
+	if (kp.ctrl)
+		modstr += 'c';
+	if (kp.shift)
+		modstr += 's';
+	if (kp.alt)
+		modstr += 'a';
+	if (kp.meta)
+		modstr += 'm';
+
+	return modstr ? modstr + '-' + key : key;
 }
 
 

@@ -1,18 +1,25 @@
 import { KeyPress, KeyModifiers, CommandGroup, CommandRef } from "src/keys";
-import { parseKey, commandItemFromYAML } from "src/keymapfile";
+import { parseKey, commandItemFromYAML, unparseKey } from "src/keymapfile";
 
 
-function testParseKey(s: string, key: string, mods?: Partial<KeyModifiers>): void {
+function testParseKey(code: string, key: string, mods?: Partial<KeyModifiers>): void {
 	const expected = new KeyPress(key, mods);
-	const parsed = parseKey(s) as any;
+	const parsed = parseKey(code) as any;
 	expect(parsed.error).toBeUndefined();
 	expect(parsed).toHaveProperty('success', true);
 	expect(parsed).toHaveProperty('key', expected);
+
+	// Also test reverse parsing for each
+	const code2 = unparseKey(parsed.key);
+	const parsed2 = parseKey(code2) as any;
+	expect(parsed2.error).toBeUndefined();
+	expect(parsed2).toHaveProperty('success', true);
+	expect(parsed2).toHaveProperty('key', expected);
 }
 
 
-function testParseKeyInvalid(s: string, pattern?: RegExp) {
-	const result = parseKey(s) as any;
+function testParseKeyInvalid(code: string, pattern?: RegExp) {
+	const result = parseKey(code) as any;
 	expect(result.key).toBeUndefined();
 	expect(result).toHaveProperty('success', false);
 	expect(result).toHaveProperty('error');

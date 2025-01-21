@@ -60,8 +60,9 @@ The following YAML defines a simple keymap:
 ```yaml
 # Root command group
 items:
-  # Command mapped to key sequence "/"
-  /:
+
+  # Command mapped to the single key combination "Ctrl+Enter"
+  c-enter:
     command: global-search:open
     description: Search in all files
 
@@ -69,37 +70,61 @@ items:
   f:
     description: File
     items:
-      # Command mapped to "f d"
+
+      # Command mapped to the key sequence "f d"
+      # Description determined automatically from command
       d:
         command: app:delete-file
-        description: Delete file
+
       # Command mapped to "f m"
-      # This uses the short form, with description determined automatically
-      m: file-explorer:move-file
+      # This uses the short form
+      m: file-explorer:move-file Move file
+      # (equivalent to long form:)
+      # m:
+      #  command: file-explorer:move-file
+      #  description: Move file
 ```
 
 It contains two types of objects:
 
-**Command groups** contain an `items` property. The root YAML value is a command group, and additional groups can be used to combine related commands under a common prefix key. The sub-properties of `items` correspond to single key presses, and their values are commands or more command groups. Command groups can be nested to any level. The `description` property is a string that is displayed in the pop-up menu (not required, but recommended).
+**Command groups** contain an `items` property. The root YAML value is a command group, and additional groups can be used to combine related commands under a common prefix key. The sub-properties of `items` are key code strings (see next section), and their values are commands or more command groups. Command groups can be nested to any level. The `description` property is a string that is displayed in the suggestions menu (not required, but recommended).
 
-**Commands** contain a `command` property that is the command ID to run (see below). They can also have `description` property, but if omitted Spacekeys will use the default description of the command. If not using a custom description you can use the short form, which is just the command ID itself instead of an object with a single property.
+**Commands** contain a `command` property that is the command ID to run (see below). They can also have `description` property, but if omitted Spacekeys will use the default description of the command. You can also use the short form, which is a single string consisting of the command ID optionally followed by a space and the description.
 
 
-#### Valid keys
+#### Key codes
 
-Any key that corresponds to a printable character can be used, as well as tab and space. Shift is the only supported modifier key. The YAML key string used should be the character produced by pressing the desired combination, so `?` corresponds to <kbd>Shift</kbd> + <kbd>/</kbd>. Note that this means a capital letter is different than a lower case letter.
+Valid key presses are more or less the same as those that can be assigned as regular hotkeys, and consist of a base key plus modifier keys. You can run the `Spacekeys: Get Key Code` command from the command palette to generate key code strings from key presses and copy them to the clipboard.
+
+- Modifier keys are denoted by single letters: `c`ontrol, `s`shift, `a`lt, or `m`eta (windows key or command key on Mac). Where preset, these are at the beginning of the key code and followed by a dash.
+- For base keys which correspond to a printable character that changes depending on whether the shift key is held, omit the `s` modifier code and instead use the "shifted" character (e.g. `?` instead of `s-/`). This is a limitation of how key events are reported in Javascript.
+- Codes for non-printable keys are mostly straightforward, e.g `space`, `enter`, `tab`, `backspace`, `pageup`, `left`.
+
+Examples:
+
+| Key Code   | Modifiers                        | Base Key         |
+| ---------- | -------------------------------- | ---------------- |
+| `t`        |                                  | <kbd>T</kbd>     |
+| `T`        | <kbd>Shift</kbd>                 | <kbd>T</kbd>     |
+| `c-/`      | <kbd>Ctrl</kbd>                  | <kbd>/</kbd>     |
+| `c-?`      | <kbd>Ctrl</kbd> <kbd>Shift</kbd> | <kbd>/</kbd>     |
+| `sa-enter` | <kbd>Shift</kbd> <kbd>Alt</kbd>  | <kbd>Enter</kbd> |
 
 Some key characters may conflict with YAML syntax. This can be avoided by enclosing the key string in single or double quotes before the colon. For example, `'"': <command or group>` corresponds to <kbd>Shift</kbd> + <kbd>'</kbd>.
-
-The following keys use special strings:
-
-- <kbd>Space</kbd>: `space` or `spc`.
-- <kbd>Tab</kbd>: `tab`.
 
 
 #### Finding command IDs
 
 The `Spacekeys: Find Command ID` command displays a pop up that allows you to search for commands by name or description. Invoke it either through the command palette or by assigning it a hotkey. Making a selection with the <kbd>Enter</kbd> will copy the command ID to the clipboard. Alternatively, you can press <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to insert the ID in the currently open editor tab (useful if you are editing your keymap file in markdown format).
+
+
+#### Extending vs replacing the default keymap
+
+In the plugin settings tab, enable the "Spacekeys keymap file: Extend default" toggle to have your custom keymap extend the default keymap instead of replacing it. This can make things simpler if you only want to make a few changes.
+
+- Commands or groups in the file will replace default commands or groups with the same key sequence.
+- The exception is that groups will be merged. Use `clear: true` in a group to omit the contents of the corresponding default group.
+- Using the value `null` removes the corresponding default command or group instead of replacing it.
 
 
 ### Vim mode leader key

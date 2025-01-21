@@ -307,6 +307,16 @@ class SpacekeysSettingTab extends PluginSettingTab {
 			.setName('Appearance');
 
 		new Setting(containerEl)
+			.setName('Dim background')
+			.setDesc('Dim the rest of the window when displaying key suggestions.')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.modal.dimBackground)
+				.onChange(async (value: boolean) => {
+					this.plugin.settings.modal.dimBackground = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
 			.setName('Shorten command labels')
 			.setDesc(
 				'Hide the part of the command description before the colon (if any). ' +

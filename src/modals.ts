@@ -29,6 +29,8 @@ export interface HotkeysModalSettings {
 	backspaceCloses: boolean,
 	// Remove part before colon on automatic command descriptions
 	trimDescriptions: boolean,
+	// Dim background while suggestions are open
+	dimBackground: boolean,
 }
 
 
@@ -39,6 +41,7 @@ export const DEFAULT_HOTKEYSMODAL_SETTINGS: HotkeysModalSettings = {
 	backspaceReverts: true,
 	backspaceCloses: true,
 	trimDescriptions: true,
+	dimBackground: true,
 };
 
 
@@ -54,6 +57,8 @@ export class HotkeysModal extends Modal {
 	private isOpen: boolean;
 	private isCollapsed: boolean;
 	private timeoutHandle: NodeJS.Timeout | null = null;
+	// This is already part of Modal but not part of the public API.
+	private dimBackground: boolean;
 
 	constructor(app: App, commands: CommandGroup, settings?: Partial<HotkeysModalSettings>) {
 		super(app);
@@ -69,6 +74,7 @@ export class HotkeysModal extends Modal {
 
 		this.isOpen = false;
 		this.setCollapsed(true);
+		this.dimBackground = this.settings.dimBackground;
 
 		this.keySequence = [];
 

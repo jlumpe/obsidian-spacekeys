@@ -17,15 +17,23 @@ interface CommandSuggestion {
 
 
 export interface HotkeysModalSettings {
+	// ms after opening before showing suggestions
+	delay: number,
+	// ms after closing to execute command
 	execDelay: number,
+	// Show invalid commands in keymap
 	showInvalid: boolean,
+	// Backspace key reverts last key press
 	backspaceReverts: boolean,
+	// Backspace on empty key sequence closes
 	backspaceCloses: boolean,
+	// Remove part before colon on automatic command descriptions
 	trimDescriptions: boolean,
 }
 
 
 export const DEFAULT_HOTKEYSMODAL_SETTINGS: HotkeysModalSettings = {
+	delay: 500,
 	execDelay: 100,
 	showInvalid: true,
 	backspaceReverts: true,
@@ -37,12 +45,15 @@ export const DEFAULT_HOTKEYSMODAL_SETTINGS: HotkeysModalSettings = {
 export class HotkeysModal extends Modal {
 	commands: CommandGroup;
 	settings: HotkeysModalSettings;
-	// showIds = true;
 
 	suggestionsEl: HTMLElement;
 	statusEl: HTMLElement;
 
 	keySequence: Array<KeyPress>;
+
+	private isOpen: boolean;
+	private isCollapsed: boolean;
+	private timeoutHandle: NodeJS.Timeout | null = null;
 
 	constructor(app: App, commands: CommandGroup, settings?: Partial<HotkeysModalSettings>) {
 		super(app);
@@ -56,6 +67,9 @@ export class HotkeysModal extends Modal {
 		this.suggestionsEl = this.modalEl.createEl('div', {cls: 'spacekeys-suggestions'});
 		this.statusEl = this.modalEl.createEl('div', {cls: 'spacekeys-modal-status'});
 
+		this.isOpen = false;
+		this.setCollapsed(true);
+
 		this.keySequence = [];
 
 		this.scope.register(null, null, this.handleKey.bind(this));
@@ -63,13 +77,75 @@ export class HotkeysModal extends Modal {
 
 	onOpen() {
 		super.onOpen();
+
+		this.isOpen = true;
+
+		if (this.settings.delay <= 0)
+			this.setCollapsed(false);
+		else {
+			this.setExpandTimer();
+		}
+
 		this.update();
+	}
+
+	onClose() {
+		super.onClose();
+
+		this.isOpen = false;
+		this.clearExpandTimer();
+		this.setCollapsed(true);
+	}
+
+	/**
+	 * Set the timer to expand the suggestions part of the modal if delay is enabled.
+	 * If there is currently a timer in progress, reset it.
+	 */
+	private setExpandTimer() {
+		this.clearExpandTimer();
+		if (this.isOpen && this.isCollapsed)
+			this.timeoutHandle = setTimeout(() => this.delayedExpand(), this.settings.delay);
+	}
+
+	/**
+	 * Clear the expand timer if set.
+	 */
+	private clearExpandTimer() {
+		if (this.timeoutHandle !== null)
+			clearTimeout(this.timeoutHandle);
+		this.timeoutHandle = null;
+	}
+
+	/**
+	 * Called when the expand timer completes.
+	 */
+	private delayedExpand() {
+		this.timeoutHandle = null;
+		if (this.isOpen)
+			this.setCollapsed(false);
+	}
+
+	/**
+	 * Add/remove collapsed CSS class on modal, which hides the suggestions.
+	 *
+	 * If the delay is enabled, the collapsed status is set when closed and unset after opening.
+	 * If the delay is disabled, this will remove the collapsed status regardless of argument value.
+	 */
+	private setCollapsed(status: boolean) {
+		status = status && (this.settings.delay > 0);
+		this.isCollapsed = status;
+		this.modalEl.toggleClass('spacekeys-modal-collapsed', status);
 	}
 
 	/**
 	 * Handle keypress.
 	 */
 	handleKey(evt: KeyboardEvent, ctx: KeymapContext) {
+		// (Re)set expand timer
+		if (this.settings.delay > 0)
+			this.setExpandTimer();
+
+		// Handle backspace
 		if (this.settings.backspaceReverts && ctx.key == 'Backspace') {
 			if (this.settings.backspaceCloses && this.keySequence.length == 0) {
 				this.close();
@@ -118,6 +194,7 @@ export class HotkeysModal extends Modal {
 			return;
 		}
 
+		// Todo: empty command group
 		const suggestions = this.getSuggestions(item);
 		for (const suggestion of suggestions) {
 			const el = this.suggestionsEl.createEl('div');

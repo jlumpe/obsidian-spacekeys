@@ -91,6 +91,10 @@
 		}
 	}
 
+	&.spacekeys-modal-collapsed .spacekeys-suggestions {
+		display: none;
+	}
+
 	.spacekeys-modal-status {
 		flex: 0 0;
 		font-size: var(--font-ui-medium);

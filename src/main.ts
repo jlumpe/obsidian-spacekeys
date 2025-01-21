@@ -261,11 +261,22 @@ class SpacekeysSettingTab extends PluginSettingTab {
 				})
 			);
 
-		// UI settings
+		// Modal behavior
 
 		new Setting(containerEl)
 			.setHeading()
-			.setName('UI settings');
+			.setName('Behavior');
+
+		new Setting(containerEl)
+			.setName('Delay')
+			.setDesc('Delay before expanding suggestions modal (milliseconds).')
+			.addText(text => text
+				.setValue('' + this.plugin.settings.modal.delay)
+				.onChange(async (value: string) => {
+					const parsed = parseInt(value);
+					this.plugin.settings.modal.delay = parsed > 0 ? parsed : 0;
+					await this.plugin.saveSettings();
+				}));
 
 		new Setting(containerEl)
 			.setName('Backspace undoes last keypress')
@@ -288,6 +299,12 @@ class SpacekeysSettingTab extends PluginSettingTab {
 					this.plugin.settings.modal.backspaceCloses = value;
 					await this.plugin.saveSettings();
 				}));
+
+		// Appearance
+
+		new Setting(containerEl)
+			.setHeading()
+			.setName('Appearance');
 
 		new Setting(containerEl)
 			.setName('Shorten command labels')

@@ -2,6 +2,7 @@ import { App, Command, Notice, FuzzySuggestModal, KeymapContext, MarkdownView, M
 
 import { KeyPress, CommandItem, CommandRef, CommandGroup } from "src/keys";
 import { addModalTitle, getCommandById, listCommands } from 'src/obsidian-utils';
+import { unparseKey } from './keymapfile';
 
 
 function keySeqBasicRepr(keys: KeyPress[]): string {
@@ -394,6 +395,57 @@ export class FindCommandModal extends FuzzySuggestModal<Command> {
 		if (view) {
 			const editor = view.editor;
 			editor.replaceSelection(command.id);
+		}
+	}
+}
+
+
+/**
+ * Modal for translating keypresses into keycodes.
+ */
+export class KeycodeGeneratorModal extends Modal {
+
+	private keycodes: string = '';
+	private text: HTMLInputElement;
+
+
+	constructor(app: App) {
+		super(app);
+		this.initContents();
+		this.scope.register(null, null, this.handleKey.bind(this));
+	}
+
+	private initContents() {
+		this.setTitle('Spacekeys key code finder');
+
+		const instructions = `
+		Enter one or more keypresses to get their key codes.
+		Press Esc to close the modal and copy the key codes to the clipboard.
+		`;
+		this.contentEl.createEl('p', {text: instructions});
+
+		this.text = this.contentEl.createEl('input', {type: 'text'});
+		this.text.addClass('spacekeys-key-code-generator');
+		this.text.readOnly = true;
+	}
+
+	handleKey(evt: KeyboardEvent, ctx: KeymapContext) {
+		const kp = KeyPress.fromEvent(evt);
+		const code = unparseKey(kp);
+		if (this.keycodes)
+			this.keycodes += " ";
+		this.keycodes += code;
+		this.text.value = this.keycodes;
+
+		evt.preventDefault();
+	}
+
+	onClose() {
+		super.onClose();
+
+		if (this.keycodes) {
+			navigator.clipboard.writeText(this.keycodes);
+			new Notice('Key code(s) copied to clipboard');
 		}
 	}
 }

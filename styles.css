@@ -115,3 +115,10 @@
 		display: none;
 	}
 }
+
+
+input.spacekeys-key-code-generator {
+	width: 100%;
+	font-family: monospace;
+	font-size: var(--font-ui-large);
+}

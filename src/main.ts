@@ -1,7 +1,7 @@
 import { App, Plugin, PluginSettingTab, Notice, Setting, normalizePath, TFile, Modal } from 'obsidian';
 
 import { CommandGroup } from "src/keys";
-import { HotkeysModal, FindCommandModal, HotkeysModalSettings, DEFAULT_HOTKEYSMODAL_SETTINGS } from "src/modals";
+import { HotkeysModal, FindCommandModal, HotkeysModalSettings, DEFAULT_HOTKEYSMODAL_SETTINGS, KeycodeGeneratorModal } from "src/modals";
 import { parseKeymapMD, parseKeymapYAML, ParseError, guessKeymapFileFormat, KeymapFileFormat, makeKeymapMarkdown } from 'src/keymapfile';
 import { ConfirmModal, openFile } from 'src/obsidian-utils';
 import { assert, UserError, userErrorString, recursiveDefaults } from 'src/util';
@@ -106,6 +106,14 @@ export default class SpacekeysPlugin extends Plugin {
 			name: 'Find command ID',
 			callback: () => {
 				new FindCommandModal(this.app).open();
+			},
+		});
+
+		this.addCommand({
+			id: 'get-keycode',
+			name: 'Get Key Code',
+			callback: () => {
+				new KeycodeGeneratorModal(this.app).open();
 			},
 		});
 	}

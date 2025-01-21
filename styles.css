@@ -73,8 +73,9 @@
 				}
 
 				.spacekeys-suggestion-key kbd {
-					color: var(--text-on-accent);
-					background: var(--interactive-accent);
+					/* Not very readable? */
+					/* color: var(--text-on-accent); */
+					/* background: var(--interactive-accent); */
 				}
 			}
 

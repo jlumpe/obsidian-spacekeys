@@ -134,7 +134,7 @@ export class HotkeysModal extends Modal {
 	private setCollapsed(status: boolean) {
 		status = status && (this.settings.delay > 0);
 		this.isCollapsed = status;
-		this.modalEl.toggleClass('spacekeys-modal-collapsed', status);
+		this.containerEl.toggleClass('spacekeys-modal-collapsed', status);
 	}
 
 	/**

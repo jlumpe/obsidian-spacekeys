@@ -10,9 +10,6 @@
 	padding: var(--size-4-2);
 }
 
-.spacekeys-modal-container {
-}
-
 .spacekeys-modal {
 	position: absolute;
 	bottom: 0;
@@ -91,10 +88,6 @@
 		}
 	}
 
-	&.spacekeys-modal-collapsed .spacekeys-suggestions {
-		display: none;
-	}
-
 	.spacekeys-modal-status {
 		flex: 0 0;
 		font-size: var(--font-ui-medium);
@@ -104,5 +97,21 @@
 		&.spacekeys-modal-status-empty {
 			color: var(--text-muted);
 		}
+	}
+}
+
+/* Collapsed state (after open, before delay) */
+.spacekeys-modal-container.spacekeys-modal-collapsed {
+	/* Hide the dimmed background effect */
+	.modal-bg {
+		/*
+		For some reason, the default modal sets the opacity of the background element via an inline
+		style. Since that overrides any attempts to set the opacity via CSS, the hacky workaround
+		is to instead set the background color to transparent.
+		*/
+		background: rgba(0, 0, 0, 0);
+	}
+	.spacekeys-suggestions {
+		display: none;
 	}
 }

@@ -143,12 +143,22 @@ vmap <Space> :spacekeysleader<CR>
 ```
 
 
+### Customizing CSS
+
+The following variables can be customized through [CSS snippets](https://help.obsidian.md/Extending+Obsidian/CSS+snippets):
+
+| Name                                   | Type   | Default | Description                          |
+| -------------------------------------- | ------ | ------- | ------------------------------------ |
+| `--spacekeys-suggestions-column-width` | Length | `250px` | Maximum width of suggestions column. |
+| `--spacekeys-suggestions-max-height`   | Length | `40%`   | Maximum height of suggestions area.  |
+
+
 ## Roadmap
 
 - [ ] Better default/example keymap.
-- [ ] Use a different modal interface, more similar to Spacemacs.
-  - [ ] Bottom of screen, full width with more compact layout (multiple columns).
-  - [ ] Short delay until displaying modal. Display current key sequence in status bar.
+- [x] Use a different modal interface, more similar to Spacemacs.
+  - [x] Bottom of screen, full width with more compact layout (multiple columns).
+  - [x] Short delay until displaying modal. Display current key sequence in status bar.
 - [ ] Alternate context-sensitive keymaps (e.g. when file browser side bar is active).
 - [ ] Set Vim keybinding without needing vimrc plugin.
 

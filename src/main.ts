@@ -88,9 +88,7 @@ export default class SpacekeysPlugin extends Plugin {
 		this.addCommand({
 			id: 'leader',
 			name: 'Leader',
-			callback: () => {
-				new HotkeysModal(this.app, this.keymap, this.settings.modal).open();
-			},
+			callback: () => this.activateLeader(),
 		});
 
 		this.addCommand({
@@ -138,6 +136,13 @@ export default class SpacekeysPlugin extends Plugin {
 	async saveSettings() {
 		this.settings.pluginVersion = this.manifest.version;
 		await this.saveData(this.settings);
+	}
+
+	/**
+	 * Activate the leader modal.
+	 */
+	activateLeader() {
+		new HotkeysModal(this.app, this.keymap, this.settings.modal).open();
 	}
 
 	/**

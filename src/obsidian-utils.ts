@@ -6,7 +6,8 @@ import { App, TFile, PaneType, Modal, FileView, WorkspaceLeaf, Workspace, Comman
  * This doesn't seem to be an officially supported API.
  */
 export function getCommandById(app: App, id: string): Command | null {
-	const result = (app as any).commands.findCommand(id);
+	// @ts-expect-error: not-typed
+	const result = app.commands.findCommand(id);
 	return result ?? null;
 }
 
@@ -16,7 +17,8 @@ export function getCommandById(app: App, id: string): Command | null {
  * As with the previous function, this doesn't appear to be in the official API.
  */
 export function listCommands(app: App): Command[] {
-	return Object.values((app as any).commands.commands);
+	// @ts-expect-error: not-typed
+	return Object.values(app.commands.commands);
 }
 
 

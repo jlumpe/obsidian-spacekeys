@@ -4,14 +4,17 @@ import { parseKey, commandItemFromYAML, unparseKey } from "src/keymapfile";
 
 function testParseKey(code: string, key: string, mods?: Partial<KeyModifiers>): void {
 	const expected = new KeyPress(key, mods);
-	const parsed = parseKey(code) as any;
+	const parsed = parseKey(code);
+	// @ts-expect-error: not-typed
 	expect(parsed.error).toBeUndefined();
 	expect(parsed).toHaveProperty('success', true);
 	expect(parsed).toHaveProperty('key', expected);
 
 	// Also test reverse parsing for each
+	// @ts-expect-error: not-typed
 	const code2 = unparseKey(parsed.key);
-	const parsed2 = parseKey(code2) as any;
+	const parsed2 = parseKey(code2);
+	// @ts-expect-error: not-typed
 	expect(parsed2.error).toBeUndefined();
 	expect(parsed2).toHaveProperty('success', true);
 	expect(parsed2).toHaveProperty('key', expected);
@@ -19,11 +22,13 @@ function testParseKey(code: string, key: string, mods?: Partial<KeyModifiers>): 
 
 
 function testParseKeyInvalid(code: string, pattern?: RegExp) {
-	const result = parseKey(code) as any;
+	const result = parseKey(code);
+	// @ts-expect-error: not-typed
 	expect(result.key).toBeUndefined();
 	expect(result).toHaveProperty('success', false);
 	expect(result).toHaveProperty('error');
 	if (pattern)
+		// @ts-expect-error: not-typed
 		expect(result.error).toMatch(pattern);
 }
 

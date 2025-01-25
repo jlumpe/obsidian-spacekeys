@@ -324,7 +324,8 @@ export class HotkeysModal extends Modal {
 	 */
 	execCommand(command: Command): void {
 		setTimeout(
-			() => (this.app as any).commands.executeCommand(command),
+			// @ts-expect-error: not-typed
+			() => this.app.commands.executeCommand(command),
 			this.settings.execDelay,
 		);
 	}
@@ -360,7 +361,8 @@ export class FindCommandModal extends FuzzySuggestModal<Command> {
 
 		this.scope.register(['Ctrl'], 'Enter', (evt: KeyboardEvent, ctx: KeymapContext) => {
 			// Also not part of the public API
-			(this as any).chooser.useSelectedItem(evt);
+			// @ts-expect-error: not-typed
+			this.chooser.useSelectedItem(evt);
 		});
 	}
 

@@ -486,7 +486,7 @@ class SpacekeysSettingTab extends PluginSettingTab {
 		openFile(this.app, file, {newLeaf: format == 'markdown' ? 'tab': false});
 
 		// Alternate to open in external app, but not part of public API
-		// (this.app as any).openWithDefaultApp(filePath);
+		// this.app.openWithDefaultApp(filePath);
 	}
 
 	/**
@@ -498,6 +498,7 @@ class SpacekeysSettingTab extends PluginSettingTab {
 			return;
 
 		// Not public API
-		(this.app as any).showInFolder(filePath);
+		// @ts-expect-error: not-typed
+		this.app.showInFolder(filePath);
 	}
 }

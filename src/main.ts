@@ -118,6 +118,18 @@ export default class SpacekeysPlugin extends Plugin {
 		});
 	}
 
+	onunload() {
+	}
+
+	async loadSettings() {
+		const loaded = await this.loadData();
+		this.settings = loaded === null ? DEFAULT_SETTINGS : recursiveDefaults(loaded, DEFAULT_SETTINGS);
+	}
+
+	async saveSettings() {
+		await this.saveData(this.settings);
+	}
+
 	/**
 	 * Load keymap from file specified in settings.
 	 * @param ignoreUnset - If true, don't throw error if keymap file not set in config.
@@ -173,18 +185,6 @@ export default class SpacekeysPlugin extends Plugin {
 		}
 
 		return true;
-	}
-
-	onunload() {
-	}
-
-	async loadSettings() {
-		const loaded = await this.loadData();
-		this.settings = loaded === null ? DEFAULT_SETTINGS : recursiveDefaults(loaded, DEFAULT_SETTINGS);
-	}
-
-	async saveSettings() {
-		await this.saveData(this.settings);
 	}
 }
 

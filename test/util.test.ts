@@ -57,6 +57,25 @@ describe('recursiveDefaults', () => {
 		const result = recursiveDefaults(values, defaults);
 		expect(result).toEqual(expected);
 	});
+	test('non-object', () => {
+		interface TestSettings {
+			foo: {
+				x: string,
+				y: boolean,
+			} | null,
+		}
+		const defaults: TestSettings = {
+			foo: {
+				x: 'x',
+				y: true,
+			},
+		};
+		const values: RecursivePartial<TestSettings> = {
+			foo: null,
+		};
+		const result = recursiveDefaults(values, defaults);
+		expect(result).toEqual(values);
+	});
 });
 
 

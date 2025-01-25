@@ -66,8 +66,14 @@ export function recursiveDefaults<T extends object>(values: RecursivePartial<T>,
 		const dval = defaults[key];
 		if (key in values) {
 			const vval = values[key] as typeof dval;
-			obj[key] = isRegularObject(dval) ? recursiveDefaults(vval as unknown as object, dval) : vval;
+			if (isRegularObject(dval) && isRegularObject(vval))
+				// Recursive merge
+				obj[key] = recursiveDefaults(vval, dval)
+			else
+				// Use given value
+				obj[key] = vval;
 		} else
+			// Value missing, use default
 			obj[key] = dval;
 	}
 

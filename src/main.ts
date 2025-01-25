@@ -10,6 +10,7 @@ import { INCLUDED_KEYMAPS_YAML } from 'src/include';
 
 
 interface SpacekeysSettings {
+	pluginVersion?: string,
 	keymapFile: {
 		path: string | null,
 		format: KeymapFileFormat,
@@ -123,10 +124,19 @@ export default class SpacekeysPlugin extends Plugin {
 
 	async loadSettings() {
 		const loaded = await this.loadData();
-		this.settings = loaded === null ? DEFAULT_SETTINGS : recursiveDefaults(loaded, DEFAULT_SETTINGS);
+
+		if (loaded === null) {
+			// No saved settings
+			this.settings = DEFAULT_SETTINGS;
+			return;
+		}
+
+		// TODO: check loaded.pluginVersion, account for changes in settings format between versions
+		this.settings = recursiveDefaults(loaded, DEFAULT_SETTINGS);
 	}
 
 	async saveSettings() {
+		this.settings.pluginVersion = this.manifest.version;
 		await this.saveData(this.settings);
 	}
 

@@ -57,7 +57,7 @@ export class HotkeysModal extends Modal {
 
 	private isOpen: boolean;
 	private isCollapsed: boolean;
-	private timeoutHandle: NodeJS.Timeout | null = null;
+	private timeoutHandle: number | null = null;
 	// This is already part of Modal but not part of the public API.
 	private dimBackground: boolean;
 
@@ -111,7 +111,7 @@ export class HotkeysModal extends Modal {
 	private setExpandTimer() {
 		this.clearExpandTimer();
 		if (this.isOpen && this.isCollapsed)
-			this.timeoutHandle = setTimeout(() => this.delayedExpand(), this.settings.delay);
+			this.timeoutHandle = window.setTimeout(() => this.delayedExpand(), this.settings.delay);
 	}
 
 	/**
@@ -119,7 +119,7 @@ export class HotkeysModal extends Modal {
 	 */
 	private clearExpandTimer() {
 		if (this.timeoutHandle !== null)
-			clearTimeout(this.timeoutHandle);
+			window.clearTimeout(this.timeoutHandle);
 		this.timeoutHandle = null;
 	}
 
@@ -323,7 +323,7 @@ export class HotkeysModal extends Modal {
 	 * to return to the original context (otherwise some commands might not execute).
 	 */
 	execCommand(command: Command): void {
-		setTimeout(
+		window.setTimeout(
 			// @ts-expect-error: not-typed
 			() => this.app.commands.executeCommand(command),
 			this.settings.execDelay,

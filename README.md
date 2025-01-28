@@ -157,7 +157,7 @@ The following variables can be customized through [CSS snippets](https://help.ob
   - [x] Bottom of screen, full width with more compact layout (multiple columns).
   - [x] Short delay until displaying modal. Display current key sequence in status bar.
 - [ ] Alternate context-sensitive keymaps (e.g. when file browser side bar is active).
-- [ ] Set Vim keybinding without needing vimrc plugin.
+- [x] Set Vim keybinding without needing vimrc plugin.
 
 
 ## Similar plugins

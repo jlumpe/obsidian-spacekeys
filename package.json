@@ -13,6 +13,7 @@
 	"author": "Jared Lumpe",
 	"license": "MIT",
 	"devDependencies": {
+		"@replit/codemirror-vim": "^6.2.1",
 		"@types/jest": "^29.5.14",
 		"@types/node": "^16.11.6",
 		"@typescript-eslint/eslint-plugin": "5.29.0",

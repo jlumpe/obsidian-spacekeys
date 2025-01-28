@@ -37,6 +37,15 @@ In the following screenshot, pressing <kbd>Space</kbd> will immediately execute 
 You can exit the menu by pressing <kbd>Esc</kbd>.
 
 
+### Activate on space
+
+With this setting enabled, space will be used as the leader key in any setting where the user is not currently inserting text (Obsidian will not otherwise allow you to assign space as a standard hotkey). This is mostly intended for use along with Vim keybindings, and will trigger as long as the current Vim mode is not insert mode.
+
+This is considered an experimental feature, and it is possible that it could interfere with some builtin Obsidian functions or with other plugins. To reduce the likelihood of this happening, you can change the setting from "Enabled" to "Markdown only." This will restrict activation to when a Markdown view is focused (in editing or reading mode).
+
+Note that some UI elements bind the space key to another action, which will prevent this function from working when those elements have focus. These include the file browser and the bookmarks, outline, and tags sidebars.
+
+
 ## Customization
 
 ### Creating a custom keymap
@@ -126,6 +135,8 @@ In the plugin settings tab, enable the "Spacekeys keymap file: Extend default" t
 
 ### Vim mode leader key
 
+(Note: the experimental "activate on space" setting can be enabled to achieve this behavior without needing to install an additional plugin).
+
 Those using Vim keybindings may want to use a different/additional keybinding depending on the
 current Vim mode. This can be done with the help of the
 [obsidian-vimrc-support](https://github.com/esm7/obsidian-vimrc-support)
@@ -157,7 +168,7 @@ The following variables can be customized through [CSS snippets](https://help.ob
   - [x] Bottom of screen, full width with more compact layout (multiple columns).
   - [x] Short delay until displaying modal. Display current key sequence in status bar.
 - [ ] Alternate context-sensitive keymaps (e.g. when file browser side bar is active).
-- [ ] Set Vim keybinding without needing vimrc plugin.
+- [x] Set Vim keybinding without needing vimrc plugin.
 
 
 ## Similar plugins

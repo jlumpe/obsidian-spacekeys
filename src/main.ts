@@ -1,13 +1,12 @@
-import { App, Plugin, PluginSettingTab, Notice, Setting, normalizePath, TFile, Modal } from 'obsidian';
+import { App, Plugin, PluginSettingTab, Notice, Setting, normalizePath, TFile, Modal, Scope, KeymapContext, KeymapEventHandler, MarkdownView } from 'obsidian';
 
 import { CommandGroup } from "src/keys";
 import { HotkeysModal, FindCommandModal, HotkeysModalSettings, DEFAULT_HOTKEYSMODAL_SETTINGS, KeycodeGeneratorModal } from "src/modals";
 import { parseKeymapMD, parseKeymapYAML, ParseError, guessKeymapFileFormat, KeymapFileFormat, makeKeymapMarkdown } from 'src/keymapfile';
-import { ConfirmModal, openFile } from 'src/obsidian-utils';
+import { ConfirmModal, isInserting, openFile } from 'src/obsidian-utils';
 import { assert, UserError, userErrorString, recursiveDefaults } from 'src/util';
 import { INCLUDED_KEYMAPS_YAML } from 'src/include';
 import { debug_log } from 'src/debug';
-
 
 
 interface SpacekeysSettings {
@@ -18,6 +17,7 @@ interface SpacekeysSettings {
 		extend: boolean,
 	},
 	modal: HotkeysModalSettings,
+	activateOnSpace: 'disabled' | 'enabled' | 'markdown_only',
 }
 
 
@@ -28,6 +28,7 @@ const DEFAULT_SETTINGS: SpacekeysSettings = {
 		extend: false,
 	},
 	modal: DEFAULT_HOTKEYSMODAL_SETTINGS,
+	activateOnSpace: 'disabled',
 };
 
 
@@ -59,6 +60,7 @@ function getBuiltinKeymap(name: string): CommandGroup | null {
 export default class SpacekeysPlugin extends Plugin {
 	settings: SpacekeysSettings;
 	keymap: CommandGroup;
+	spaceHandler: KeymapEventHandler | null = null;
 
 	async onload() {
 		console.log('Loading Spacekeys');
@@ -72,6 +74,8 @@ export default class SpacekeysPlugin extends Plugin {
 		await this.loadSettings();
 
 		this.addSettingTab(new SpacekeysSettingTab(this.app, this));
+
+		this.updateSpaceHandler();
 
 		// Load keymap from file if path set in settings
 		// Do this once Obsidian has finished loading, otherwise the file will be falsely reported
@@ -120,6 +124,7 @@ export default class SpacekeysPlugin extends Plugin {
 	}
 
 	onunload() {
+		this.updateSpaceHandler(false);
 	}
 
 	async loadSettings() {
@@ -145,6 +150,80 @@ export default class SpacekeysPlugin extends Plugin {
 	 */
 	activateLeader() {
 		new HotkeysModal(this.app, this.keymap, this.settings.modal).open();
+	}
+
+	/**
+	 * Check if experimental activate-on-space behavior is enabled in config.
+	 */
+	activateOnSpaceEnabled() : boolean {
+		// Explicit check of positive values in case the option wasn't loaded correctly
+		const value = this.settings.activateOnSpace;
+		return value == 'enabled' || value == 'markdown_only';
+	}
+
+	/**
+	 * Register or unregister handler func depending on settings.activateOnSpace.
+	 */
+	updateSpaceHandler(activate: boolean | null = null) {
+		activate = activate ?? this.activateOnSpaceEnabled();
+		// @ts-expect-error: not-typed
+		const scope: Scope = this.app.keymap.getRootScope();
+
+		if (activate) {
+			if (this.spaceHandler === null) {
+				debug_log('registering space event handler');
+				this.spaceHandler = scope.register([], ' ', this.handleSpace.bind(this));
+			}
+		} else if (this.spaceHandler !== null) {
+			debug_log('Unregistering space event handler');
+			scope.unregister(this.spaceHandler);
+			this.spaceHandler = null;
+		}
+	}
+
+	/**
+	 * Handle space key when "Activate on space" option enabled.
+	 *
+	 * Note: it's undocumented, but apparently returning true from the scope hander function
+	 * means preventDefault() is NOT called on the event.
+	 */
+	handleSpace(evt: KeyboardEvent, ctx: KeymapContext): boolean {
+		if (!this.activateOnSpaceEnabled())
+			return true;
+
+		const mdview = this.app.workspace.getActiveViewOfType(MarkdownView);
+
+		if (mdview) {
+			// In markdown view. This includes reading mode.
+			// Prevent if inserting (focused, and in Vim insert mode if applicable).
+			if (isInserting(mdview))
+				return true;
+
+		} else {
+			// Somewhere else
+
+			// Prevent if non-Markdown views disabled in config
+			if (this.settings.activateOnSpace == 'markdown_only')
+				return true;
+
+			// Prevent if a text input element is focused.
+			// This catches case of search sidebar, for example.
+			const focused = document.activeElement?.tagName;
+			if (focused == 'INPUT' || focused == 'TEXTAREA')
+				return true;
+
+			// Some additional input elements do not have input tags, but have the contentEditable
+			// attribute. Prevent in this case as well.
+			// (Note that this also applies to the Markdown edit area, but we checked that it's not
+			// currently focused).
+			if (document.activeElement instanceof HTMLElement &&
+					document.activeElement.contentEditable == 'true')
+				return true;
+		}
+
+		// Activate
+		this.activateLeader();
+		return false;
 	}
 
 	/**
@@ -361,6 +440,30 @@ class SpacekeysSettingTab extends PluginSettingTab {
 				.onChange(async (value: boolean) => {
 					this.plugin.settings.modal.showInvalid = value;
 					await this.plugin.saveSettings();
+				}));
+
+		// Experimental
+
+		new Setting(containerEl)
+			.setHeading()
+			.setName('Experimental')
+			.setDesc('Features in this section may not work correctly.');
+
+		new Setting(containerEl)
+			.setName('Activate on space')
+			.setDesc('Activate when pressing spacebar (when not inserting text).')
+			.addDropdown(dropdown => dropdown
+				.addOptions({
+					disabled: 'Disabled',
+					enabled: 'Enabled',
+					markdown_only: 'Markdown only'
+				})
+				.setValue(this.plugin.settings.activateOnSpace)
+				.onChange(async (value: string) => {
+					// @ts-expect-error
+					this.plugin.settings.activateOnSpace = value;
+					await this.plugin.saveSettings();
+					this.plugin.updateSpaceHandler();
 				}));
 	}
 

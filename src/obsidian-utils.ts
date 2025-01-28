@@ -1,4 +1,6 @@
-import { App, TFile, PaneType, Modal, FileView, WorkspaceLeaf, Workspace, Command, SuggestModal } from 'obsidian';
+import { App, TFile, PaneType, Modal, FileView, WorkspaceLeaf, Workspace, Command, SuggestModal, MarkdownView } from 'obsidian';
+import { EditorView } from "@codemirror/view";
+import { getCM } from "@replit/codemirror-vim";
 
 
 /**
@@ -154,4 +156,20 @@ export function addModalTitle(modal: SuggestModal<any>, text?: string): HTMLElem
 	if (text)
 		el.textContent = text;
 	return el;
+}
+
+
+/**
+ * Check if the MarkdownView's editor is focused and ready to insert text.
+ * If Vim mode is enabled, return False unless in insert mode.
+ */
+export function isInserting(view: MarkdownView): boolean {
+	if (!view.editor.hasFocus())
+		return false;
+
+	// @ts-expect-error: not-typed
+	const ev = view.editor.cm as EditorView;
+
+	const cm = getCM(ev);
+	return cm?.state.vim?.insertMode ?? true;
 }

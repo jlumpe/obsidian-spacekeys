@@ -93,7 +93,7 @@ export default class SpacekeysPlugin extends Plugin {
 
 		this.addCommand({
 			id: 'load-keymap',
-			name: 'Reload Keymap',
+			name: 'Reload keymap',
 			callback: async () => this
 				.loadKeymap()
 				.then(() => { new Notice('Keymap loaded from file'); })
@@ -110,7 +110,7 @@ export default class SpacekeysPlugin extends Plugin {
 
 		this.addCommand({
 			id: 'get-keycode',
-			name: 'Get Key Code',
+			name: 'Get key code',
 			callback: () => {
 				new KeycodeGeneratorModal(this.app).open();
 			},

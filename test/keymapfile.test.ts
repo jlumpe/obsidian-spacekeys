@@ -1,3 +1,8 @@
+import { mockObsidian } from "./common";
+
+mockObsidian();
+
+
 import { KeyPress, KeyModifiers, CommandGroup, CommandRef } from "src/keys";
 import { parseKey, commandItemFromYAML, unparseKey } from "src/keymapfile";
 

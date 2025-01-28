@@ -172,7 +172,7 @@ export default class SpacekeysPlugin extends Plugin {
 		if (format == null)
 			throw new UserError('Could not guess format of file from extension')
 
-		console.log('Spacekeys: loading keymap from ' + filename);
+		// console.log('Spacekeys: loading keymap from ' + filename);
 
 		// Read file contents
 		try {

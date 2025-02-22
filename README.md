@@ -24,11 +24,6 @@ The keymap is customizable and can include any command that can be assigned a tr
 1. <kbd>v</kbd> <kbd>r</kbd>: **V**iew → Toggle **r**eading view
 
 
-## Installation
-
-This plugin is not yet available to be installed through the app and will need to be installed manually. Navigate to the [releases](https://github.com/jlumpe/obsidian-spacekeys/releases/) page, select the most recent release, and download the `main.js`, `styles.css`, and `manifest.json` files. Create the subdirectory `.obsidian/plugins/obsidian-spacekeys/` in your Obsidian vault folder and copy the files to it. Restart Obsidian, open the settings panel, navigate to "Communitiy plugins" → "Installed plugins" → "Spacekeys" and click the toggle to enable it.
-
-
 ## Usage
 
 All functionality is accessed through a single "leader" hotkey. This is a standard Obsidian hotkey that you will need to assign yourself (in accordance with Obsidian's plugin guidelines, Spacekeys does not define any hotkeys by default). Navigate to the "Hotkeys" section of Obsidian's settings and use the search function to find the `Spacekeys: Leader` command. A good choice is <kbd>Ctrl</kbd> + <kbd>M</kbd> (which is not bound by default).

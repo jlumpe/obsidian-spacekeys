@@ -6,6 +6,7 @@ import { parseKeymapMD, parseKeymapYAML, ParseError, guessKeymapFileFormat, Keym
 import { ConfirmModal, openFile } from 'src/obsidian-utils';
 import { assert, UserError, userErrorString, recursiveDefaults } from 'src/util';
 import { INCLUDED_KEYMAPS_YAML } from 'src/include';
+import { debug_log } from 'src/debug';
 
 
 
@@ -61,6 +62,7 @@ export default class SpacekeysPlugin extends Plugin {
 
 	async onload() {
 		console.log('Loading Spacekeys');
+		debug_log('development build');
 
 		this.registerCommands()
 
@@ -78,7 +80,7 @@ export default class SpacekeysPlugin extends Plugin {
 			if (this.settings.keymapFile.path) {
 				this.loadKeymap(true).catch((e) => {
 					const msg = userErrorString(e);
-					console.log(`Spacekeys: failed to load user keymap file ${this.settings.keymapFile.path}: ${msg}`);
+					console.error(`Spacekeys: failed to load user keymap file ${this.settings.keymapFile.path}: ${msg}`);
 				});
 			}
 		});
@@ -172,7 +174,7 @@ export default class SpacekeysPlugin extends Plugin {
 		if (format == null)
 			throw new UserError('Could not guess format of file from extension')
 
-		// console.log('Spacekeys: loading keymap from ' + filename);
+		debug_log('loading keymap from ' + filename);
 
 		// Read file contents
 		try {
@@ -194,7 +196,6 @@ export default class SpacekeysPlugin extends Plugin {
 
 		} catch (e) {
 
-			console.error(e);
 			const details = e instanceof ParseError ? e.message : null;
 			throw new UserError('Parse error', {details, context: e});
 		}

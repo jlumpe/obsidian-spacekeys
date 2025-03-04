@@ -371,7 +371,7 @@ export class HotkeysModal extends Modal {
 	 */
 	openFile(file_path: string): void {
 		try {
-			openFile(this.app, file_path);
+			openFile(this.app, file_path, { newLeaf: 'tab' });
 		} catch (error) {
 			new Notice(`Error opening file: ${file_path}`);
 		}

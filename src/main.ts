@@ -1,4 +1,4 @@
-import { App, Plugin, PluginSettingTab, Notice, Setting, normalizePath, TFile, Modal } from 'obsidian';
+import { App, Plugin, PluginSettingTab, Notice, Setting, normalizePath, TFile, Modal, debounce, EventRef } from 'obsidian';
 
 import { CommandGroup } from "src/keys";
 import { HotkeysModal, FindCommandModal, HotkeysModalSettings, DEFAULT_HOTKEYSMODAL_SETTINGS, KeycodeGeneratorModal } from "src/modals";
@@ -58,6 +58,21 @@ function getBuiltinKeymap(name: string): CommandGroup | null {
 export default class SpacekeysPlugin extends Plugin {
 	settings: SpacekeysSettings;
 	keymap: CommandGroup;
+	// Event reference for file watcher, used to clean up when unloading the plugin
+	private fileWatcher: EventRef | null = null;
+	// Debounced reload function to avoid frequent reloading
+	private debouncedReloadKeymap = debounce(
+		async () => {
+			try {
+				await this.loadKeymap(true);
+				new Notice('Configuration file reloaded');
+			} catch (e) {
+				new Notice('Failed to reload configuration file: ' + userErrorString(e), 5000);
+			}
+		},
+		500, // 500ms debounce delay
+		true  // Call after the delay
+	);
 
 	async onload() {
 		console.log('Loading Spacekeys');
@@ -80,8 +95,19 @@ export default class SpacekeysPlugin extends Plugin {
 					const msg = userErrorString(e);
 					console.log(`Spacekeys: failed to load user keymap file ${this.settings.keymapFile.path}: ${msg}`);
 				});
+				
+				// Set up file watcher
+				this.setupFileWatcher();
 			}
 		});
+	}
+
+	onunload() {
+		// Clean up file watcher
+		if (this.fileWatcher) {
+			this.app.vault.offref(this.fileWatcher);
+			this.fileWatcher = null;
+		}
 	}
 
 	private registerCommands(): void {
@@ -117,9 +143,6 @@ export default class SpacekeysPlugin extends Plugin {
 		});
 	}
 
-	onunload() {
-	}
-
 	async loadSettings() {
 		const loaded = await this.loadData();
 
@@ -136,6 +159,9 @@ export default class SpacekeysPlugin extends Plugin {
 	async saveSettings() {
 		this.settings.pluginVersion = this.manifest.version;
 		await this.saveData(this.settings);
+		
+		// Update file watcher
+		this.setupFileWatcher();
 	}
 
 	/**
@@ -200,6 +226,31 @@ export default class SpacekeysPlugin extends Plugin {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Set up file watcher.
+	 */
+	private setupFileWatcher(): void {
+		// If already set up, remove existing watcher
+		if (this.fileWatcher) {
+			this.app.vault.offref(this.fileWatcher);
+			this.fileWatcher = null;
+		}
+
+		// Ensure keymap file path is set
+		if (!this.settings.keymapFile.path) {
+			return;
+		}
+
+		// Watch for file modifications
+		this.fileWatcher = this.app.vault.on('modify', (file) => {
+			// Check if modified file is our keymap file
+			if (file.path === this.settings.keymapFile.path) {
+				console.log('Spacekeys: Keymap file modified, reloading');
+				this.debouncedReloadKeymap();
+			}
+		});
 	}
 }
 

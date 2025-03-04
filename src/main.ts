@@ -219,8 +219,8 @@ export default class SpacekeysPlugin extends Plugin {
 				this.keymap = parseKeymapYAML(contents, parentKeymap);
 
 		} catch (e) {
-
-			console.error(e);
+			const path = e.path.map(s => JSON.stringify(s)).join('->');
+			console.error('Error parsing keymap at ' + path + '\n' + e);
 			const details = e instanceof ParseError ? e.message : null;
 			throw new UserError('Parse error', {details, context: e});
 		}

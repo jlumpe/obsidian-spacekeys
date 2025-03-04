@@ -85,6 +85,11 @@ items:
       # m:
       #  command: file-explorer:move-file
       #  description: Move file
+
+  # Open a specific note with the key sequence "w"
+  w:
+    description: Specific Note
+    file: notename
 ```
 
 It contains two types of objects:
@@ -93,12 +98,13 @@ It contains two types of objects:
 
 **Commands** contain a `command` property that is the command ID to run (see below). They can also have `description` property, but if omitted Spacekeys will use the default description of the command. You can also use the short form, which is a single string consisting of the command ID optionally followed by a space and the description.
 
+**Files** contain a `file` property that is the path to the file to open. This allows you to quickly open specific notes in your vault. The file path can be relative to your vault root.
 
 #### Key codes
 
 Valid key presses are more or less the same as those that can be assigned as regular hotkeys, and consist of a base key plus modifier keys. You can run the `Spacekeys: Get Key Code` command from the command palette to generate key code strings from key presses and copy them to the clipboard.
 
-- Modifier keys are denoted by single letters: `c`ontrol, `s`shift, `a`lt, or `m`eta (windows key or command key on Mac). Where preset, these are at the beginning of the key code and followed by a dash.
+- Modifier keys are denoted by single letters: `c`ontrol, `s`hift, `a`lt, or `m`eta (windows key or command key on Mac). Where preset, these are at the beginning of the key code and followed by a dash.
 - For base keys which correspond to a printable character that changes depending on whether the shift key is held, omit the `s` modifier code and instead use the "shifted" character (e.g. `?` instead of `s-/`). This is a limitation of how key events are reported in Javascript.
 - Codes for non-printable keys are mostly straightforward, e.g `space`, `enter`, `tab`, `backspace`, `pageup`, `left`.
 

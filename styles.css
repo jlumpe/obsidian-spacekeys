@@ -86,6 +86,12 @@
 					}
 				}
 			}
+
+			&.spacekeys-file {
+				.spacekeys-suggestion-label {
+					color: var(--text-accent);
+				}
+			}
 		}
 	}
 

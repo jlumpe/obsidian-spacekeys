@@ -199,24 +199,30 @@ export class KeyPress {
 }
 
 
-export type CommandItem = CommandRef | CommandGroup;
+export type CommandItem = CommandRef | CommandGroup | FileRef;
 
-
+/**
+ * Reference to a command.
+ */
 export class CommandRef {
 	constructor(public command_id: string, public description: string | null = null) {
 	}
 }
 
-
-interface CGChild {
-	key: KeyPress,
-	item: CommandItem,
+/**
+ * Reference to a file to be opened.
+ */
+export class FileRef {
+	constructor(public file_path: string, public description: string | null = null) {
+	}
 }
 
-
+/**
+ * Group of commands.
+ */
 export class CommandGroup {
 	description: string | null;
-	children: CGChild[];
+	children: {key: KeyPress, item: CommandItem}[];
 
 	constructor(description: string | null = null) {
 		this.description = description;
@@ -274,7 +280,7 @@ export class CommandGroup {
 		let child: CommandItem | null;
 
 		for (const key of keys) {
-			if (selected instanceof CommandRef)
+			if (selected instanceof CommandRef || selected instanceof FileRef)
 				return strict ? null : selected;
 
 			child = selected.getChild(key);

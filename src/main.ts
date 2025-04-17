@@ -15,6 +15,7 @@ interface SpacekeysSettings {
 		path: string | null,
 		format: KeymapFileFormat,
 		extend: boolean,
+		autoReload: boolean,
 	},
 	modal: HotkeysModalSettings,
 	activateOnSpace: 'disabled' | 'enabled' | 'markdown_only',
@@ -26,6 +27,7 @@ const DEFAULT_SETTINGS: SpacekeysSettings = {
 		path: null,
 		format: 'auto',
 		extend: false,
+		autoReload: false,
 	},
 	modal: DEFAULT_HOTKEYSMODAL_SETTINGS,
 	activateOnSpace: 'disabled',
@@ -63,7 +65,8 @@ export default class SpacekeysPlugin extends Plugin {
 	spaceHandler: KeymapEventHandler | null = null;
 	// Event reference for file watcher, used to clean up when unloading the plugin
 	private fileWatcher: EventRef | null = null;
-	// Debounced reload function to avoid frequent reloading
+	// Debounced reload function to avoid frequent reloading.
+	// May not be entirely necessary, file autosaving while editing is already debounced.
 	private debouncedReloadKeymap = debounce(
 		async () => {
 			try {
@@ -73,7 +76,7 @@ export default class SpacekeysPlugin extends Plugin {
 				new Notice('Failed to reload configuration file: ' + userErrorString(e), 5000);
 			}
 		},
-		500, // 500ms debounce delay
+		500, // Delay (ms)
 		true  // Call after the delay
 	);
 
@@ -103,19 +106,14 @@ export default class SpacekeysPlugin extends Plugin {
 				});
 
 				// Set up file watcher
-				this.setupFileWatcher();
+				this.updateFileWatcher();
 			}
 		});
 	}
 
 	onunload() {
 		this.updateSpaceHandler(false);
-
-		// Clean up file watcher
-		if (this.fileWatcher) {
-			this.app.vault.offref(this.fileWatcher);
-			this.fileWatcher = null;
-		}
+		this.updateFileWatcher(false);
 	}
 
 	private registerCommands(): void {
@@ -169,7 +167,7 @@ export default class SpacekeysPlugin extends Plugin {
 		await this.saveData(this.settings);
 
 		// Update file watcher
-		this.setupFileWatcher();
+		this.updateFileWatcher();
 	}
 
 	/**
@@ -198,7 +196,7 @@ export default class SpacekeysPlugin extends Plugin {
 
 		if (activate) {
 			if (this.spaceHandler === null) {
-				debug_log('registering space event handler');
+				debug_log('Registering space event handler');
 				this.spaceHandler = scope.register([], ' ', this.handleSpace.bind(this));
 			}
 		} else if (this.spaceHandler !== null) {
@@ -309,28 +307,30 @@ export default class SpacekeysPlugin extends Plugin {
 	}
 
 	/**
-	 * Set up file watcher.
+	 * Update keymap file watcher.
 	 */
-	private setupFileWatcher(): void {
-		// If already set up, remove existing watcher
-		if (this.fileWatcher) {
+	private updateFileWatcher(enable?: boolean): void {
+
+		enable ??= this.settings.keymapFile.path && this.settings.keymapFile.autoReload || false;
+
+		if (enable && !this.fileWatcher) {
+			debug_log('Registering keymap file watcher');
+			// Watch for file modifications
+			this.fileWatcher = this.app.vault.on('modify', (file) => {
+				// Check if modified file is our keymap file
+				if (file.path === this.settings.keymapFile.path) {
+					debug_log('Keymap file modified, reloading');
+					this.debouncedReloadKeymap();
+				}
+			});
+		}
+
+		if (!enable && this.fileWatcher) {
+			// Remove existing watcher
+			debug_log('Unregistering keymap file watcher');
 			this.app.vault.offref(this.fileWatcher);
 			this.fileWatcher = null;
 		}
-
-		// Ensure keymap file path is set
-		if (!this.settings.keymapFile.path) {
-			return;
-		}
-
-		// Watch for file modifications
-		this.fileWatcher = this.app.vault.on('modify', (file) => {
-			// Check if modified file is our keymap file
-			if (file.path === this.settings.keymapFile.path) {
-				console.log('Spacekeys: Keymap file modified, reloading');
-				this.debouncedReloadKeymap();
-			}
-		});
 	}
 }
 
@@ -411,6 +411,17 @@ class SpacekeysSettingTab extends PluginSettingTab {
 				.setValue(this.plugin.settings.keymapFile.extend)
 				.onChange(async (value: boolean) => {
 					this.plugin.settings.keymapFile.extend = value;
+					await this.plugin.saveSettings();
+				})
+			);
+
+		new Setting(containerEl)
+			.setName('Auto reload')
+			.setDesc('Automatically reload keymap when file changed.')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.keymapFile.autoReload)
+				.onChange(async (value: boolean) => {
+					this.plugin.settings.keymapFile.autoReload = value;
 					await this.plugin.saveSettings();
 				})
 			);

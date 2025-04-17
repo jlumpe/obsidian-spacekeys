@@ -155,7 +155,7 @@ export default class SpacekeysPlugin extends Plugin {
 	/**
 	 * Check if experimental activate-on-space behavior is enabled in config.
 	 */
-	activateOnSpaceEnabled() : boolean {
+	isActivateOnSpaceEnabled() : boolean {
 		// Explicit check of positive values in case the option wasn't loaded correctly
 		const value = this.settings.activateOnSpace;
 		return value == 'enabled' || value == 'markdown_only';
@@ -165,7 +165,7 @@ export default class SpacekeysPlugin extends Plugin {
 	 * Register or unregister handler func depending on settings.activateOnSpace.
 	 */
 	updateSpaceHandler(activate: boolean | null = null) {
-		activate = activate ?? this.activateOnSpaceEnabled();
+		activate = activate ?? this.isActivateOnSpaceEnabled();
 		// @ts-expect-error: not-typed
 		const scope: Scope = this.app.keymap.getRootScope();
 
@@ -188,7 +188,7 @@ export default class SpacekeysPlugin extends Plugin {
 	 * means preventDefault() is NOT called on the event.
 	 */
 	handleSpace(evt: KeyboardEvent, ctx: KeymapContext): boolean {
-		if (!this.activateOnSpaceEnabled())
+		if (!this.isActivateOnSpaceEnabled())
 			return true;
 
 		const mdview = this.app.workspace.getActiveViewOfType(MarkdownView);

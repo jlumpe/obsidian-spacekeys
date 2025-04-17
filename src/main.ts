@@ -17,7 +17,7 @@ interface SpacekeysSettings {
 		extend: boolean,
 	},
 	modal: HotkeysModalSettings,
-	activateOnSpace: boolean,
+	activateOnSpace: 'disabled' | 'enabled' | 'markdown_only',
 }
 
 
@@ -28,7 +28,7 @@ const DEFAULT_SETTINGS: SpacekeysSettings = {
 		extend: false,
 	},
 	modal: DEFAULT_HOTKEYSMODAL_SETTINGS,
-	activateOnSpace: false,
+	activateOnSpace: 'disabled',
 };
 
 
@@ -153,10 +153,19 @@ export default class SpacekeysPlugin extends Plugin {
 	}
 
 	/**
+	 * Check if experimental activate-on-space behavior is enabled in config.
+	 */
+	activateOnSpaceEnabled() : boolean {
+		// Explicit check of positive values in case the option wasn't loaded correctly
+		const value = this.settings.activateOnSpace;
+		return value == 'enabled' || value == 'markdown_only';
+	}
+
+	/**
 	 * Register or unregister handler func depending on settings.activateOnSpace.
 	 */
 	updateSpaceHandler(activate: boolean | null = null) {
-		activate = activate ?? this.settings.activateOnSpace;
+		activate = activate ?? this.activateOnSpaceEnabled();
 		// @ts-expect-error: not-typed
 		const scope: Scope = this.app.keymap.getRootScope();
 
@@ -179,24 +188,40 @@ export default class SpacekeysPlugin extends Plugin {
 	 * means preventDefault() is NOT called on the event.
 	 */
 	handleSpace(evt: KeyboardEvent, ctx: KeymapContext): boolean {
-		// Prevent if editor focused (and in insert mode, if Vim enabled)
+		if (!this.activateOnSpaceEnabled())
+			return true;
+
 		const mdview = this.app.workspace.getActiveViewOfType(MarkdownView);
-		if (mdview  && isInserting(mdview))
-			return true;
 
-		// Also if a text input element is focused
-		// This catches case of search sidebar, for example
-		const focused = document.activeElement?.tagName;
-		if (focused == 'INPUT' || focused == 'TEXTAREA')
-			return true;
+		if (mdview) {
+			// In markdown view. This includes reading mode.
+			// Prevent if inserting (focused, and in Vim insert mode if applicable).
+			if (isInserting(mdview))
+				return true;
 
-		// Some additional input elements do not have input tags, but have the contentEditable
-		// attribute. This applies to the Markdown edit area, which we *dont* want to skip if we are
-		// in a VIM non-insert mode (already checked above).
-		if (!mdview && document.activeElement instanceof HTMLElement &&
-				document.activeElement.contentEditable == 'true')
-			return true;
+		} else {
+			// Somewhere else
 
+			// Prevent if non-Markdown views disabled in config
+			if (this.settings.activateOnSpace == 'markdown_only')
+				return true;
+
+			// Prevent if a text input element is focused.
+			// This catches case of search sidebar, for example.
+			const focused = document.activeElement?.tagName;
+			if (focused == 'INPUT' || focused == 'TEXTAREA')
+				return true;
+
+			// Some additional input elements do not have input tags, but have the contentEditable
+			// attribute. Prevent in this case as well.
+			// (Note that this also applies to the Markdown edit area, but we checked that it's not
+			// currently focused).
+			if (document.activeElement instanceof HTMLElement &&
+					document.activeElement.contentEditable == 'true')
+				return true;
+		}
+
+		// Activate
 		this.activateLeader();
 		return false;
 	}
@@ -427,9 +452,15 @@ class SpacekeysSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('Activate on space')
 			.setDesc('Activate when pressing spacebar (when not inserting text).')
-			.addToggle(toggle => toggle
+			.addDropdown(dropdown => dropdown
+				.addOptions({
+					disabled: 'Disabled',
+					enabled: 'Enabled',
+					markdown_only: 'Markdown only'
+				})
 				.setValue(this.plugin.settings.activateOnSpace)
-				.onChange(async (value: boolean) => {
+				.onChange(async (value: string) => {
+					// @ts-expect-error
 					this.plugin.settings.activateOnSpace = value;
 					await this.plugin.saveSettings();
 					this.plugin.updateSpaceHandler();

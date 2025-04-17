@@ -43,6 +43,10 @@ const context = await esbuild.context({
 		'.yml': 'text',
 		'.md': 'text',
 	},
+	alias: {
+		// A somewhat hacky way altering behavior based on whether it is a production or dev build
+		'src/debug': prod ? 'src/debug-prod' : 'src/debug',
+	},
 });
 
 if (prod) {

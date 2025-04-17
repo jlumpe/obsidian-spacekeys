@@ -1,12 +1,12 @@
-import { App, Plugin, PluginSettingTab, Notice, Setting, normalizePath, TFile, Modal, debounce, EventRef } from 'obsidian';
+import { App, Plugin, PluginSettingTab, Notice, Setting, normalizePath, TFile, Modal, Scope, KeymapContext, KeymapEventHandler, MarkdownView, debounce, EventRef } from 'obsidian';
 
 import { CommandGroup } from "src/keys";
 import { HotkeysModal, FindCommandModal, HotkeysModalSettings, DEFAULT_HOTKEYSMODAL_SETTINGS, KeycodeGeneratorModal } from "src/modals";
 import { parseKeymapMD, parseKeymapYAML, ParseError, guessKeymapFileFormat, KeymapFileFormat, makeKeymapMarkdown } from 'src/keymapfile';
-import { ConfirmModal, openFile } from 'src/obsidian-utils';
+import { ConfirmModal, isInserting, openFile } from 'src/obsidian-utils';
 import { assert, UserError, userErrorString, recursiveDefaults } from 'src/util';
 import { INCLUDED_KEYMAPS_YAML } from 'src/include';
-
+import { debug_log } from 'src/debug';
 
 
 interface SpacekeysSettings {
@@ -17,6 +17,7 @@ interface SpacekeysSettings {
 		extend: boolean,
 	},
 	modal: HotkeysModalSettings,
+	activateOnSpace: 'disabled' | 'enabled' | 'markdown_only',
 }
 
 
@@ -27,6 +28,7 @@ const DEFAULT_SETTINGS: SpacekeysSettings = {
 		extend: false,
 	},
 	modal: DEFAULT_HOTKEYSMODAL_SETTINGS,
+	activateOnSpace: 'disabled',
 };
 
 
@@ -58,6 +60,7 @@ function getBuiltinKeymap(name: string): CommandGroup | null {
 export default class SpacekeysPlugin extends Plugin {
 	settings: SpacekeysSettings;
 	keymap: CommandGroup;
+	spaceHandler: KeymapEventHandler | null = null;
 	// Event reference for file watcher, used to clean up when unloading the plugin
 	private fileWatcher: EventRef | null = null;
 	// Debounced reload function to avoid frequent reloading
@@ -76,6 +79,7 @@ export default class SpacekeysPlugin extends Plugin {
 
 	async onload() {
 		console.log('Loading Spacekeys');
+		debug_log('development build');
 
 		this.registerCommands()
 
@@ -86,6 +90,8 @@ export default class SpacekeysPlugin extends Plugin {
 
 		this.addSettingTab(new SpacekeysSettingTab(this.app, this));
 
+		this.updateSpaceHandler();
+
 		// Load keymap from file if path set in settings
 		// Do this once Obsidian has finished loading, otherwise the file will be falsely reported
 		// as missing.
@@ -93,9 +99,9 @@ export default class SpacekeysPlugin extends Plugin {
 			if (this.settings.keymapFile.path) {
 				this.loadKeymap(true).catch((e) => {
 					const msg = userErrorString(e);
-					console.log(`Spacekeys: failed to load user keymap file ${this.settings.keymapFile.path}: ${msg}`);
+					console.error(`Spacekeys: failed to load user keymap file ${this.settings.keymapFile.path}: ${msg}`);
 				});
-				
+
 				// Set up file watcher
 				this.setupFileWatcher();
 			}
@@ -103,6 +109,8 @@ export default class SpacekeysPlugin extends Plugin {
 	}
 
 	onunload() {
+		this.updateSpaceHandler(false);
+
 		// Clean up file watcher
 		if (this.fileWatcher) {
 			this.app.vault.offref(this.fileWatcher);
@@ -159,7 +167,7 @@ export default class SpacekeysPlugin extends Plugin {
 	async saveSettings() {
 		this.settings.pluginVersion = this.manifest.version;
 		await this.saveData(this.settings);
-		
+
 		// Update file watcher
 		this.setupFileWatcher();
 	}
@@ -172,9 +180,83 @@ export default class SpacekeysPlugin extends Plugin {
 	}
 
 	/**
+	 * Check if experimental activate-on-space behavior is enabled in config.
+	 */
+	isActivateOnSpaceEnabled() : boolean {
+		// Explicit check of positive values in case the option wasn't loaded correctly
+		const value = this.settings.activateOnSpace;
+		return value == 'enabled' || value == 'markdown_only';
+	}
+
+	/**
+	 * Register or unregister handler func depending on settings.activateOnSpace.
+	 */
+	updateSpaceHandler(activate: boolean | null = null) {
+		activate = activate ?? this.isActivateOnSpaceEnabled();
+		// @ts-expect-error: not-typed
+		const scope: Scope = this.app.keymap.getRootScope();
+
+		if (activate) {
+			if (this.spaceHandler === null) {
+				debug_log('registering space event handler');
+				this.spaceHandler = scope.register([], ' ', this.handleSpace.bind(this));
+			}
+		} else if (this.spaceHandler !== null) {
+			debug_log('Unregistering space event handler');
+			scope.unregister(this.spaceHandler);
+			this.spaceHandler = null;
+		}
+	}
+
+	/**
+	 * Handle space key when "Activate on space" option enabled.
+	 *
+	 * Note: it's undocumented, but apparently returning true from the scope hander function
+	 * means preventDefault() is NOT called on the event.
+	 */
+	handleSpace(evt: KeyboardEvent, ctx: KeymapContext): boolean {
+		if (!this.isActivateOnSpaceEnabled())
+			return true;
+
+		const mdview = this.app.workspace.getActiveViewOfType(MarkdownView);
+
+		if (mdview) {
+			// In markdown view. This includes reading mode.
+			// Prevent if inserting (focused, and in Vim insert mode if applicable).
+			if (isInserting(mdview))
+				return true;
+
+		} else {
+			// Somewhere else
+
+			// Prevent if non-Markdown views disabled in config
+			if (this.settings.activateOnSpace == 'markdown_only')
+				return true;
+
+			// Prevent if a text input element is focused.
+			// This catches case of search sidebar, for example.
+			const focused = document.activeElement?.tagName;
+			if (focused == 'INPUT' || focused == 'TEXTAREA')
+				return true;
+
+			// Some additional input elements do not have input tags, but have the contentEditable
+			// attribute. Prevent in this case as well.
+			// (Note that this also applies to the Markdown edit area, but we checked that it's not
+			// currently focused).
+			if (document.activeElement instanceof HTMLElement &&
+					document.activeElement.contentEditable == 'true')
+				return true;
+		}
+
+		// Activate
+		this.activateLeader();
+		return false;
+	}
+
+	/**
 	 * Load keymap from file specified in settings.
 	 * @param ignoreUnset - If true, don't throw error if keymap file not set in config.
-	 * @returns - True if loaded successfully, false if ignoreUnset=true path not set in config.
+	 * @returns - True if loaded successfully, false if ignoreUnset=true and path not set in config.
 	 * @throws {UserError} - Error with user message if loading fails.
 	 */
 	async loadKeymap(ignoreUnset = false): Promise<boolean> {
@@ -198,7 +280,7 @@ export default class SpacekeysPlugin extends Plugin {
 		if (format == null)
 			throw new UserError('Could not guess format of file from extension')
 
-		// console.log('Spacekeys: loading keymap from ' + filename);
+		debug_log('loading keymap from ' + filename);
 
 		// Read file contents
 		try {
@@ -219,8 +301,6 @@ export default class SpacekeysPlugin extends Plugin {
 				this.keymap = parseKeymapYAML(contents, parentKeymap);
 
 		} catch (e) {
-			const path = e.path?.map((s: any) => JSON.stringify(s)).join('->') || '';
-			console.error('Error parsing keymap at ' + path + '\n' + e);
 			const details = e instanceof ParseError ? e.message : null;
 			throw new UserError('Parse error', {details, context: e});
 		}
@@ -411,6 +491,30 @@ class SpacekeysSettingTab extends PluginSettingTab {
 				.onChange(async (value: boolean) => {
 					this.plugin.settings.modal.showInvalid = value;
 					await this.plugin.saveSettings();
+				}));
+
+		// Experimental
+
+		new Setting(containerEl)
+			.setHeading()
+			.setName('Experimental')
+			.setDesc('Features in this section may not work correctly.');
+
+		new Setting(containerEl)
+			.setName('Activate on space')
+			.setDesc('Activate when pressing spacebar (when not inserting text).')
+			.addDropdown(dropdown => dropdown
+				.addOptions({
+					disabled: 'Disabled',
+					enabled: 'Enabled',
+					markdown_only: 'Markdown only'
+				})
+				.setValue(this.plugin.settings.activateOnSpace)
+				.onChange(async (value: string) => {
+					// @ts-expect-error
+					this.plugin.settings.activateOnSpace = value;
+					await this.plugin.saveSettings();
+					this.plugin.updateSpaceHandler();
 				}));
 	}
 

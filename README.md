@@ -24,11 +24,6 @@ The keymap is customizable and can include any command that can be assigned a tr
 1. <kbd>v</kbd> <kbd>r</kbd>: **V**iew → Toggle **r**eading view
 
 
-## Installation
-
-This plugin is not yet available to be installed through the app and will need to be installed manually. Navigate to the [releases](https://github.com/jlumpe/obsidian-spacekeys/releases/) page, select the most recent release, and download the `main.js`, `styles.css`, and `manifest.json` files. Create the subdirectory `.obsidian/plugins/obsidian-spacekeys/` in your Obsidian vault folder and copy the files to it. Restart Obsidian, open the settings panel, navigate to "Communitiy plugins" → "Installed plugins" → "Spacekeys" and click the toggle to enable it.
-
-
 ## Usage
 
 All functionality is accessed through a single "leader" hotkey. This is a standard Obsidian hotkey that you will need to assign yourself (in accordance with Obsidian's plugin guidelines, Spacekeys does not define any hotkeys by default). Navigate to the "Hotkeys" section of Obsidian's settings and use the search function to find the `Spacekeys: Leader` command. A good choice is <kbd>Ctrl</kbd> + <kbd>M</kbd> (which is not bound by default).
@@ -40,6 +35,15 @@ In the following screenshot, pressing <kbd>Space</kbd> will immediately execute 
 ![Group vs command](https://raw.githubusercontent.com/jlumpe/obsidian-spacekeys/master/resources/group-vs-command.png)
 
 You can exit the menu by pressing <kbd>Esc</kbd>.
+
+
+### Activate on space
+
+With this setting enabled, space will be used as the leader key in any setting where the user is not currently inserting text (Obsidian will not otherwise allow you to assign space as a standard hotkey). This is mostly intended for use along with Vim keybindings, and will trigger as long as the current Vim mode is not insert mode.
+
+This is considered an experimental feature, and it is possible that it could interfere with some builtin Obsidian functions or with other plugins. To reduce the likelihood of this happening, you can change the setting from "Enabled" to "Markdown only." This will restrict activation to when a Markdown view is focused (in editing or reading mode).
+
+Note that some UI elements bind the space key to another action, which will prevent this function from working when those elements have focus. These include the file browser and the bookmarks, outline, and tags sidebars.
 
 
 ## Customization
@@ -98,7 +102,7 @@ It contains two types of objects:
 
 Valid key presses are more or less the same as those that can be assigned as regular hotkeys, and consist of a base key plus modifier keys. You can run the `Spacekeys: Get Key Code` command from the command palette to generate key code strings from key presses and copy them to the clipboard.
 
-- Modifier keys are denoted by single letters: `c`ontrol, `s`shift, `a`lt, or `m`eta (windows key or command key on Mac). Where preset, these are at the beginning of the key code and followed by a dash.
+- Modifier keys are denoted by single letters: `c`ontrol, `s`hift, `a`lt, or `m`eta (windows key or command key on Mac). Where present, these are at the beginning of the key code and followed by a dash.
 - For base keys which correspond to a printable character that changes depending on whether the shift key is held, omit the `s` modifier code and instead use the "shifted" character (e.g. `?` instead of `s-/`). This is a limitation of how key events are reported in Javascript.
 - Codes for non-printable keys are mostly straightforward, e.g `space`, `enter`, `tab`, `backspace`, `pageup`, `left`.
 
@@ -131,6 +135,8 @@ In the plugin settings tab, enable the "Spacekeys keymap file: Extend default" t
 
 ### Vim mode leader key
 
+(Note: the experimental "activate on space" setting can be enabled to achieve this behavior without needing to install an additional plugin).
+
 Those using Vim keybindings may want to use a different/additional keybinding depending on the
 current Vim mode. This can be done with the help of the
 [obsidian-vimrc-support](https://github.com/esm7/obsidian-vimrc-support)
@@ -162,7 +168,7 @@ The following variables can be customized through [CSS snippets](https://help.ob
   - [x] Bottom of screen, full width with more compact layout (multiple columns).
   - [x] Short delay until displaying modal. Display current key sequence in status bar.
 - [ ] Alternate context-sensitive keymaps (e.g. when file browser side bar is active).
-- [ ] Set Vim keybinding without needing vimrc plugin.
+- [x] Set Vim keybinding without needing vimrc plugin.
 
 
 ## Similar plugins

@@ -229,7 +229,7 @@ export default class SpacekeysPlugin extends Plugin {
 	/**
 	 * Load keymap from file specified in settings.
 	 * @param ignoreUnset - If true, don't throw error if keymap file not set in config.
-	 * @returns - True if loaded successfully, false if ignoreUnset=true path not set in config.
+	 * @returns - True if loaded successfully, false if ignoreUnset=true and path not set in config.
 	 * @throws {UserError} - Error with user message if loading fails.
 	 */
 	async loadKeymap(ignoreUnset = false): Promise<boolean> {

@@ -102,7 +102,7 @@ It contains two types of objects:
 
 Valid key presses are more or less the same as those that can be assigned as regular hotkeys, and consist of a base key plus modifier keys. You can run the `Spacekeys: Get Key Code` command from the command palette to generate key code strings from key presses and copy them to the clipboard.
 
-- Modifier keys are denoted by single letters: `c`ontrol, `s`shift, `a`lt, or `m`eta (windows key or command key on Mac). Where preset, these are at the beginning of the key code and followed by a dash.
+- Modifier keys are denoted by single letters: `c`ontrol, `s`hift, `a`lt, or `m`eta (windows key or command key on Mac). Where present, these are at the beginning of the key code and followed by a dash.
 - For base keys which correspond to a printable character that changes depending on whether the shift key is held, omit the `s` modifier code and instead use the "shifted" character (e.g. `?` instead of `s-/`). This is a limitation of how key events are reported in Javascript.
 - Codes for non-printable keys are mostly straightforward, e.g `space`, `enter`, `tab`, `backspace`, `pageup`, `left`.
 

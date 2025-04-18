@@ -218,7 +218,12 @@ export default class SpacekeysPlugin extends Plugin {
 
 		const mdview = this.app.workspace.getActiveViewOfType(MarkdownView);
 
-		if (mdview) {
+		// Check that the codemirror editing element (.cm-content) is actually focused.
+		// This avoids the edge case of editing the inline title element, where mdview will be
+		// non-null but we definitely don't want to capture the keypress.
+		const isCodeMirror = !!document.activeElement?.closest('div.cm-content');
+
+		if (mdview && isCodeMirror) {
 			// In markdown view. This includes reading mode.
 			// Prevent if inserting (focused, and in Vim insert mode if applicable).
 			if (isInserting(mdview))

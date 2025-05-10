@@ -34,6 +34,13 @@ const DEFAULT_SETTINGS: SpacekeysSettings = {
 };
 
 
+interface TryLoadKeymapOptions {
+	allowDefault?: boolean,
+	notifySuccess?: boolean,
+	onError?: null | 'notice' | 'modal',
+}
+
+
 /**
  * Get a builtin keymap by name.
  */
@@ -68,14 +75,7 @@ export default class SpacekeysPlugin extends Plugin {
 	// Debounced reload function to avoid frequent reloading.
 	// May not be entirely necessary, file autosaving while editing is already debounced.
 	private debouncedReloadKeymap = debounce(
-		async () => {
-			try {
-				await this.loadKeymap(true);
-				new Notice('Configuration file reloaded');
-			} catch (e) {
-				new Notice('Failed to reload configuration file: ' + userErrorString(e), 5000);
-			}
-		},
+		() => this.tryLoadKeymap(),
 		500, // Delay (ms)
 		true  // Call after the delay
 	);
@@ -100,10 +100,7 @@ export default class SpacekeysPlugin extends Plugin {
 		// as missing.
 		this.app.workspace.onLayoutReady(() => {
 			if (this.settings.keymapFile.path) {
-				this.loadKeymap(true).catch((e) => {
-					const msg = userErrorString(e);
-					console.error(`Spacekeys: failed to load user keymap file ${this.settings.keymapFile.path}: ${msg}`);
-				});
+				this.tryLoadKeymap({notifySuccess: false});
 
 				// Set up file watcher
 				this.updateFileWatcher();
@@ -126,10 +123,7 @@ export default class SpacekeysPlugin extends Plugin {
 		this.addCommand({
 			id: 'load-keymap',
 			name: 'Reload keymap',
-			callback: async () => this
-				.loadKeymap()
-				.then(() => { new Notice('Keymap loaded from file'); })
-				.catch((e) => { new Notice('Failed to load keymap: ' + userErrorString(e), 5000); }),
+			callback: () => this.tryLoadKeymap({onError: 'modal'}),
 		});
 
 		this.addCommand({
@@ -258,20 +252,15 @@ export default class SpacekeysPlugin extends Plugin {
 
 	/**
 	 * Load keymap from file specified in settings.
-	 * @param ignoreUnset - If true, don't throw error if keymap file not set in config.
-	 * @returns - True if loaded successfully, false if ignoreUnset=true and path not set in config.
 	 * @throws {UserError} - Error with user message if loading fails.
 	 */
-	async loadKeymap(ignoreUnset = false): Promise<boolean> {
+	async loadKeymap(): Promise<void> {
 
 		const filename = this.settings.keymapFile.path;
 		let contents: string;
 
 		if (!filename)
-			if (ignoreUnset)
-				return false;
-			else
-				throw new UserError('Keymap file not set in plugin settings');
+			throw new UserError('Keymap file not set in plugin settings');
 
 		// Check file exists
 		const file = this.app.vault.getFileByPath(filename);
@@ -307,8 +296,98 @@ export default class SpacekeysPlugin extends Plugin {
 			const details = e instanceof ParseError ? e.message : null;
 			throw new UserError('Parse error', {details, context: e});
 		}
+	}
 
-		return true;
+	/**
+	 * Attempt to reload the keymap and optionally display a notice/modal on success/failure.
+	 * @param allowDefault - If true, load default keymap if file not set in config. Otherwise fail
+	 *     with an error message.
+	 * @param notifySuccess - If true, display a notice on success.
+	 * @param onError - If 'notice', display a notice on error. If 'modal', show a modal with the
+	 *     error message. If null, do not display anything.
+	 * @returns {Object} rval
+	 * @returns {boolean} rval.loaded - True if user keymap loaded successfully, false if default was used.
+	 * @returns {Error} rval.error - Error object if loading failed, null otherwise.
+	 */
+	async tryLoadKeymap(
+		{
+			allowDefault = false,
+			notifySuccess = true,
+			onError = 'notice',
+		}: TryLoadKeymapOptions = {},
+	): Promise<{loaded: boolean, error: UserError | null}> {
+
+		// If allowDefault is false and path not set, will error in loadKeymap()
+		if (!this.settings.keymapFile.path && allowDefault) {
+			const keymap = getBuiltinKeymap('default');
+			assert(keymap);
+			this.keymap = keymap;
+			return {loaded: false, error: null};
+		}
+
+		try {
+			await this.loadKeymap();
+
+		} catch (e) {
+			if (!(e instanceof UserError))
+				throw e;
+
+			const msg = `Spacekeys: failed to load keymap (${e.message})`;
+
+			console.error(msg);
+			if (e.context)
+				console.error(e.context);
+
+			if (onError === 'notice')
+				new Notice(msg, 5000);
+			else if (onError === 'modal')
+				this.showLoadErrorModal(e);
+
+			return {loaded: false, error: e};
+		}
+
+		if (notifySuccess)
+			new Notice('Spacekeys: keymap reloaded');
+		return {loaded: true, error: null};
+	}
+
+	/**
+	 * Show a modal with a detailed error message if loading the keymap fails.
+	 * @param err - The error to display.
+	 */
+	private showLoadErrorModal(err: UserError): void {
+		const modal = new Modal(this.app);
+		const content = modal.contentEl.createEl('p', {text: err.message});
+		modal.setTitle('Error loading keymap');
+
+		// Display more context if cause was ParseError
+		if (err.context instanceof ParseError) {
+			const { path } = err.context;
+
+			content.appendText(': ' + err.context.message);
+
+			// In the case of improper YAML content, display location
+			if (path) {
+				content.appendText(' (at ');
+				if (path.length > 0) {
+					content.createEl('code', {text: path.join('.')});
+					content.appendText(' in');
+				} else {
+					content.appendText('root element of');
+				}
+				content.appendText(' YAML content)');
+			}
+		}
+
+		content.appendText('.');
+
+		new Setting(modal.contentEl)
+			.addButton(btn => btn
+				.setButtonText('OK')
+				.setCta()
+				.onClick(evt => modal.close()));
+
+		modal.open();
 	}
 
 	/**
@@ -362,7 +441,7 @@ class SpacekeysSettingTab extends PluginSettingTab {
 			.addButton(btn => btn
 				.setIcon('refresh-cw')
 				.setTooltip('(Re)load keymap from file')
-				.onClick(evt => this.loadKeymap())
+				.onClick(evt => this.plugin.tryLoadKeymap({onError: 'modal'}))
 				.setClass('mod-cta')
 			)
 			.addButton(btn => btn
@@ -532,65 +611,6 @@ class SpacekeysSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 					this.plugin.updateSpaceHandler();
 				}));
-	}
-
-	/**
-	 * Attempt to reload the keymap and display a modal with a detailed error message if it fails.
-	 */
-	private async loadKeymap(): Promise<void> {
-		if (!this.plugin.settings.keymapFile.path) {
-			const keymap = getBuiltinKeymap('default');
-			assert(keymap);
-			this.plugin.keymap = keymap;
-			new Notice('Default keymap loaded');
-			return;
-		}
-
-		try {
-			await this.plugin.loadKeymap();
-			new Notice('Keymap reloaded');
-			return;
-
-		} catch (e) {
-			if (!(e instanceof UserError))
-				throw e;
-			this.showLoadErrorModal(e);
-		}
-	}
-
-	private showLoadErrorModal(err: UserError): void {
-		const modal = new Modal(this.app);
-		const content = modal.contentEl.createEl('p', {text: err.message});
-		modal.setTitle('Error loading keymap');
-
-		// Display more context if cause was ParseError
-		if (err.context instanceof ParseError) {
-			const { path } = err.context;
-
-			content.appendText(': ' + err.context.message);
-
-			// In the case of improper YAML content, display location
-			if (path) {
-				content.appendText(' (at ');
-				if (path.length > 0) {
-					content.createEl('code', {text: path.join('.')});
-					content.appendText(' in');
-				} else {
-					content.appendText('root element of');
-				}
-				content.appendText(' YAML content)');
-			}
-		}
-
-		content.appendText('.');
-
-		new Setting(modal.contentEl)
-			.addButton(btn => btn
-				.setButtonText('OK')
-				.setCta()
-				.onClick(evt => modal.close()));
-
-		modal.open();
 	}
 
 	/**

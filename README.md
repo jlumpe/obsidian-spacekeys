@@ -43,23 +43,25 @@ With this setting enabled, space will be used as the leader key in any setting w
 
 This is considered an experimental feature, and it is possible that it could interfere with some builtin Obsidian functions or with other plugins. To reduce the likelihood of this happening, you can change the setting from "Enabled" to "Markdown only." This will restrict activation to when a Markdown view is focused (in editing or reading mode).
 
-Note that some UI elements bind the space key to another action, which will prevent this function from working when those elements have focus. These include the file browser and the bookmarks, outline, and tags sidebars.
+The feature does not work in the following settings:
+
+- Sidebars which bind the space key to another action: file browser and bookmarks (on left), outline and tags (on right).
+- Canvas view (disabled to avoid confict with Space + Drag to pan).
+- Web viewer (disabled to avoid general conflicts with text inputs and other UI elements).
 
 
-## Customization
+## Customizing the keymap
 
-### Creating a custom keymap
-
-#### Source file
+### Source file
 
 Custom keymaps can be defined in a YAML file in your Obsidian vault. Open Obsidian's settings and navigate to "Community Plugins" → "Spacekeys." In the "Spacekeys keymap file" section, set the "Path" field to the location of the config file relative to your vault's root directory (e.g., `_config/spacekeys.yml`). If the file does not yet exist, you can use the "Create file with default contents" button at the top of the settings menu to initialize the file from the default keymap. Then click the "Open file for editing" button (this will open an external editor program if it is a pure YAML file).
 
 To facilitate editing within Obsidian, you may also use a Markdown file where the YAML is contained within a code block (enclosed by triple backicks). The "Create file with default contents" button will create a file formatted this way if the supplied path has the `.md` extension.
 
-After creating/editing the file, use the "(Re)load keymap from file" button in the settings tab or the `Spacekeys: Reload keymap` command from the command palette. If there are errors parsing the file, the button in the settings tab will display more detailed error messages.
+After creating/editing the file, use the "(Re)load keymap from file" button in the settings tab or the `Spacekeys: Reload keymap` command from the command palette. Alternatively, you may enable the "auto reload" setting to automatically reload the keymap file after editing. If your keymap file contains errors, explicitly reloading it using the command or the button in the settings menu will display a detailed error message (automatic reloading on startup or after editing the file will only display a short, unobtrusive notification).
 
 
-#### Format
+### Format
 
 The following YAML defines a simple keymap:
 
@@ -85,7 +87,7 @@ items:
       # Command mapped to "f m"
       # This uses the short form
       m: file-explorer:move-file Move file
-      # (equivalent to long form:)
+      # equivalent to long form:
       # m:
       #  command: file-explorer:move-file
       #  description: Move file
@@ -98,7 +100,7 @@ It contains two types of objects:
 **Commands** contain a `command` property that is the command ID to run (see below). They can also have `description` property, but if omitted Spacekeys will use the default description of the command. You can also use the short form, which is a single string consisting of the command ID optionally followed by a space and the description.
 
 
-#### Key codes
+### Key codes
 
 Valid key presses are more or less the same as those that can be assigned as regular hotkeys, and consist of a base key plus modifier keys. You can run the `Spacekeys: Get Key Code` command from the command palette to generate key code strings from key presses and copy them to the clipboard.
 
@@ -119,12 +121,12 @@ Examples:
 Some key characters may conflict with YAML syntax. This can be avoided by enclosing the key string in single or double quotes before the colon. For example, `'"': <command or group>` corresponds to <kbd>Shift</kbd> + <kbd>'</kbd>.
 
 
-#### Finding command IDs
+### Finding command IDs
 
-The `Spacekeys: Find Command ID` command displays a pop up that allows you to search for commands by name or description. Invoke it either through the command palette or by assigning it a hotkey. Making a selection with the <kbd>Enter</kbd> will copy the command ID to the clipboard. Alternatively, you can press <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to insert the ID in the currently open editor tab (useful if you are editing your keymap file in markdown format).
+The `Spacekeys: Find Command ID` command displays a pop up that allows you to search for commands by name or description. Invoke it either through the command palette or by assigning it a hotkey. Making a selection with <kbd>Enter</kbd> will copy the command ID to the clipboard. Alternatively, you can press <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to insert the ID in the currently open editor tab (useful if you are editing your keymap file in markdown format).
 
 
-#### Extending vs replacing the default keymap
+### Extending vs replacing the default keymap
 
 In the plugin settings tab, enable the "Spacekeys keymap file: Extend default" toggle to have your custom keymap extend the default keymap instead of replacing it. This can make things simpler if you only want to make a few changes.
 
@@ -132,6 +134,8 @@ In the plugin settings tab, enable the "Spacekeys keymap file: Extend default" t
 - The exception is that groups will be merged. Use `clear: true` in a group to omit the contents of the corresponding default group.
 - Using the value `null` removes the corresponding default command or group instead of replacing it.
 
+
+## Additional customization
 
 ### Vim mode leader key
 
@@ -163,12 +167,13 @@ The following variables can be customized through [CSS snippets](https://help.ob
 
 ## Roadmap
 
+- [ ] Add shortcuts to open specific files.
 - [ ] Better default/example keymap.
 - [x] Use a different modal interface, more similar to Spacemacs.
   - [x] Bottom of screen, full width with more compact layout (multiple columns).
   - [x] Short delay until displaying modal. Display current key sequence in status bar.
 - [ ] Alternate context-sensitive keymaps (e.g. when file browser side bar is active).
-- [x] Set Vim keybinding without needing vimrc plugin.
+- [x] Activate on space without needing vimrc plugin.
 
 
 ## Similar plugins

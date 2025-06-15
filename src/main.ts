@@ -254,6 +254,18 @@ export default class SpacekeysPlugin extends Plugin {
 			if (this.settings.activateOnSpace == 'markdown_only')
 				return true;
 
+			// Can't use getActiveViewOfType() because several view types do not seem to have their
+			// classes exposed publicly, have to use deprecated activeLeaf property.
+			const activeView = this.app.workspace.activeLeaf?.view.getViewType();
+
+			// Prevent in web viewer leaf, as the below checks don't seem to work well.
+			if (activeView === 'webviewer')
+				return true;
+
+			// Prevent in canvas view as space+drag is used to scroll.
+			if (activeView === 'canvas')
+				return true;
+
 			// Prevent if a text input element is focused.
 			// This catches case of search sidebar, for example.
 			const focused = document.activeElement?.tagName;

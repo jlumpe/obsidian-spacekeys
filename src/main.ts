@@ -5,9 +5,9 @@ import {
 
 import { CommandGroup } from "src/keys";
 import { HotkeysModal, FindCommandModal, HotkeysModalSettings, DEFAULT_HOTKEYSMODAL_SETTINGS, KeycodeGeneratorModal } from "src/modals";
-import { parseKeymapMD, parseKeymapYAML, ParseError, guessKeymapFileFormat, KeymapFileFormat, makeKeymapMarkdown } from 'src/keymapfile';
+import { parseKeymapMD, parseKeymapYAML, KeymapParseError, guessKeymapFileFormat, KeymapFileFormat, makeKeymapMarkdown } from 'src/keymapfile';
 import { ConfirmModal, isInserting, openFile } from 'src/obsidian-utils';
-import { assert, UserError, userErrorString, recursiveDefaults } from 'src/util';
+import { assert, UserError, recursiveDefaults } from 'src/util';
 import { INCLUDED_KEYMAPS_YAML } from 'src/include';
 import { debug_log } from 'src/debug';
 
@@ -59,7 +59,7 @@ function getBuiltinKeymap(name: string): CommandGroup | null {
 		return parseKeymapYAML(yaml);
 	} catch (e) {
 		console.error('Error parsing default keymap ' + name);
-		if (e instanceof ParseError)
+		if (e instanceof KeymapParseError)
 			console.error(e.message, e.path, e.data);
 		else
 			console.error(e);
@@ -317,7 +317,7 @@ export default class SpacekeysPlugin extends Plugin {
 				this.keymap = parseKeymapYAML(contents, parentKeymap);
 
 		} catch (e) {
-			const details = e instanceof ParseError ? e.message : null;
+			const details = e instanceof KeymapParseError ? e.message : null;
 			throw new UserError('Parse error', {details, context: e});
 		}
 	}
@@ -381,30 +381,50 @@ export default class SpacekeysPlugin extends Plugin {
 	 */
 	private showLoadErrorModal(err: UserError): void {
 		const modal = new Modal(this.app);
-		const content = modal.contentEl.createEl('p', {text: err.message});
-		modal.setTitle('Error loading keymap');
+		modal.setTitle('Spacekeys: Error loading keymap');
+		modal.modalEl.addClass('spacekeys-keymap-error');
 
-		// Display more context if cause was ParseError
-		if (err.context instanceof ParseError) {
-			const { path } = err.context;
+		const dl = modal.contentEl.createEl('dl');
 
-			content.appendText(': ' + err.context.message);
-
-			// In the case of improper YAML content, display location
-			if (path) {
-				content.appendText(' (at ');
-				if (path.length > 0) {
-					content.createEl('code', {text: path.join('.')});
-					content.appendText(' in');
-				} else {
-					content.appendText('root element of');
-				}
-				content.appendText(' YAML content)');
-			}
+		function addItem(name: string, value?: string): HTMLElement {
+			dl.createEl('dt', {text: name + ':'});
+			let dd = dl.createEl('dd', {text: value ?? ''});
+			return dd;
 		}
 
-		content.appendText('.');
+		addItem('Error', err.message);
+		addItem('File').createEl('code', {text: this.settings.keymapFile.path ?? '<unset>'});
 
+		// Display more context if cause was KeymapParseError
+		if (err.context instanceof KeymapParseError) {
+			const { path, cause } = err.context;
+			const detailsEl = addItem('Details');
+
+			if (cause) {
+				// Wrapped error from Obsidian parseYaml() function.
+				// This contains multiline text, including a snipped of the YAML block itself.
+				// Format as <pre>.
+				detailsEl.createEl('pre', {text: cause.message});
+
+			} else {
+				detailsEl.setText(err.context.message);
+			}
+
+			if (path !== null) {
+				const pathEl = addItem('YAML path');
+
+				if (path)
+					pathEl.createEl('code', {text: path.join('.')});
+				else
+					pathEl.setText('Root element');
+			}
+
+		} else if(err.details) {
+			// Doesn't currently actually happen without parse error?
+			addItem('Details', err.details);
+		}
+
+		// OK button
 		new Setting(modal.contentEl)
 			.addButton(btn => btn
 				.setButtonText('OK')

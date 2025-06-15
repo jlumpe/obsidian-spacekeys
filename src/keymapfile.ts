@@ -20,20 +20,37 @@ function isYAMLObject(value: YAMLData): value is YAMLObject {
  */
 type ParsePath = Array<string | number>;
 
+
+interface KeymapParseErrorOptions {
+	path: ParsePath | null;
+	data: YAMLData | null;
+	cause: Error | null;
+}
+
 /**
  * Error attempting to parse keymap from file.
  *
  * @prop path - If the error occurred in creating the keymap from parsed YAML, the path to the
  *              problematic value.
  */
-export class ParseError extends Error {
-	constructor(msg: string, public path: ParsePath | null = null, public data?: YAMLData) {
+export class KeymapParseError extends Error {
+	path: ParsePath | null;
+	data: YAMLData | null;
+	cause: Error | null;
+
+	constructor(msg: string, options: Partial<KeymapParseErrorOptions> = {}) {
 		super(msg);
+		this.path = options.path ?? null;
+		this.data = options.data ?? null;
+		this.cause = options.cause ?? null;
 	}
 }
 
+/**
+ * Convenience function.
+ */
 function parseError(msg: string, path: ParsePath, data?: YAMLData, extraPath?: ParsePath): never {
-	throw new ParseError(msg, extraPath ? path.concat(extraPath) : path, data);
+	throw new KeymapParseError(msg, {path: extraPath ? path.concat(extraPath) : path, data: data});
 }
 
 
@@ -162,10 +179,10 @@ export function unparseKey(kp: KeyPress): string {
  */
 function keymapFromYAML(data: YAMLData, extend?: CommandGroup): CommandGroup {
 	if (!isYAMLObject(data))
-		throw new ParseError('Root element not an object', [], data);
+		parseError('Root element not an object', [], data);
 
 	if (!('items' in data))
-		throw new ParseError('Expected "items" property', [], data);
+		parseError('Expected "items" property', [], data);
 
 	const item = commandItemFromYAML(data, [], extend);
 	assert(item instanceof CommandGroup);
@@ -207,11 +224,11 @@ export function commandItemFromYAML(data: YAMLData, path: ParsePath, extend?: Co
 		}
 
 	} else {
-		throw parseError('Expected string or object', path, data);
+		parseError('Expected string or object', path, data);
 	}
 
 	if (item instanceof CommandRef && !item.command_id)
-		throw parseError('Command ID cannot be empty', path, item.command_id, ['command']);
+		parseError('Command ID cannot be empty', path, item.command_id, ['command']);
 
 	return item;
 }
@@ -271,7 +288,7 @@ export function parseKeymapYAML(lines: string, extend?: CommandGroup): CommandGr
 	try {
 		data = parseYaml(lines);
 	} catch (error) {
-		throw new ParseError(String(error));
+		throw new KeymapParseError(String(error), {cause: error});
 	}
 
 	return keymapFromYAML(data, extend);
@@ -285,7 +302,7 @@ export function parseKeymapMD(lines: string, extend?: CommandGroup): CommandGrou
 	const yaml = findCodeBlock(lines);
 
 	if (!yaml)
-		throw new ParseError('No code block found');
+		throw new KeymapParseError('No code block found');
 
 	return parseKeymapYAML(yaml, extend);
 }

@@ -236,34 +236,34 @@ export default class SpacekeysPlugin extends Plugin {
 
 		const mdview = this.app.workspace.getActiveViewOfType(MarkdownView);
 
+		// Can't use getActiveViewOfType() for several relevant view types as they do not seem to
+		// have their classes exposed publicly, have to use deprecated activeLeaf property.
+		const activeViewType = this.app.workspace.activeLeaf?.view.getViewType();
+
 		// Check that the codemirror editing element (.cm-content) is actually focused.
 		// This avoids the edge case of editing the inline title element, where mdview will be
 		// non-null but we definitely don't want to capture the keypress.
 		const isCodeMirror = !!document.activeElement?.closest('div.cm-content');
 
 		if (mdview && isCodeMirror) {
-			// In markdown view. This includes reading mode.
+			// In markdown view and main editor body is active.
 			// Prevent if inserting (focused, and in Vim insert mode if applicable).
 			if (isInserting(mdview))
 				return true;
 
 		} else {
-			// Somewhere else
-
-			// Prevent if non-Markdown views disabled in config
-			if (this.settings.activateOnSpace == 'markdown_only')
+			// Prevent if non-Markdown views disabled in config.
+			// We could still be in markdown view here, either in reading mode or editing the title.
+			// The first is OK, the latter will get excluded below.
+			if (!mdview && this.settings.activateOnSpace == 'markdown_only')
 				return true;
 
-			// Can't use getActiveViewOfType() because several view types do not seem to have their
-			// classes exposed publicly, have to use deprecated activeLeaf property.
-			const activeView = this.app.workspace.activeLeaf?.view.getViewType();
-
 			// Prevent in web viewer leaf, as the below checks don't seem to work well.
-			if (activeView === 'webviewer')
+			if (activeViewType === 'webviewer')
 				return true;
 
 			// Prevent in canvas view as space+drag is used to scroll.
-			if (activeView === 'canvas')
+			if (activeViewType === 'canvas')
 				return true;
 
 			// Prevent if a text input element is focused.

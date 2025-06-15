@@ -6,6 +6,7 @@ items:
   "?": switcher:open
   P: app:go-back
   N: app:go-forward
+  .: spacekeys:repeat-last
 
   w:
     description: Workspace

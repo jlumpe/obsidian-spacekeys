@@ -4,6 +4,8 @@ import { KeyPress, CommandItem, CommandRef, CommandGroup } from "src/keys";
 import { addModalTitle, getCommandById, listCommands } from 'src/obsidian-utils';
 import { unparseKey } from './keymapfile';
 
+import type SpacekeysPlugin from './main';
+
 
 function keySeqBasicRepr(keys: KeyPress[]): string {
 	return keys.map(kp => kp.basicRepr()).join(' ');
@@ -47,6 +49,7 @@ export const DEFAULT_HOTKEYSMODAL_SETTINGS: HotkeysModalSettings = {
 
 
 export class HotkeysModal extends Modal {
+	plugin: SpacekeysPlugin;
 	commands: CommandGroup;
 	settings: HotkeysModalSettings;
 
@@ -61,10 +64,11 @@ export class HotkeysModal extends Modal {
 	// This is already part of Modal but not part of the public API.
 	private dimBackground: boolean;
 
-	constructor(app: App, commands: CommandGroup, settings?: Partial<HotkeysModalSettings>) {
-		super(app);
-		this.commands = commands;
-		this.settings = Object.assign({}, DEFAULT_HOTKEYSMODAL_SETTINGS, settings);
+	constructor(plugin: SpacekeysPlugin) {
+		super(plugin.app);
+		this.plugin = plugin;
+		this.commands = plugin.keymap;
+		this.settings = Object.assign({}, DEFAULT_HOTKEYSMODAL_SETTINGS, plugin.settings.modal);
 
 		this.containerEl.addClass('spacekeys-modal-container');
 		this.modalEl.addClass('spacekeys-modal');
@@ -263,9 +267,20 @@ export class HotkeysModal extends Modal {
 			el.addClass('spacekeys-command');
 
 			if (suggestion.command) {
-				if (!description)
-					description = this.getCommandDescription(suggestion.command.name);
+				if (suggestion.command.id === 'spacekeys:repeat-last') {
+					// Custom formatting for repeat last
+					if (this.plugin.lastCommand)
+						// Use description of command to be repeated
+						description ??= 'Repeat: ' + this.getCommandDescription(this.plugin.lastCommand.name);
+					else
+						// No last command, style as invalid
+						el.addClass('spacekeys-invalid');
+				}
+
+				// Regular command, use command's description
+				description ??= this.getCommandDescription(suggestion.command.name);
 			} else {
+				// Command not found
 				el.addClass('spacekeys-invalid');
 				description ??= suggestion.item.command_id;
 			}
@@ -328,6 +343,8 @@ export class HotkeysModal extends Modal {
 			() => this.app.commands.executeCommand(command),
 			this.settings.execDelay,
 		);
+		if (command.id !== 'spacekeys:repeat-last')
+			this.plugin.lastCommand = command;
 	}
 
 	/**
@@ -409,7 +426,6 @@ export class KeycodeGeneratorModal extends Modal {
 
 	private keycodes: string = '';
 	private text: HTMLInputElement;
-
 
 	constructor(app: App) {
 		super(app);

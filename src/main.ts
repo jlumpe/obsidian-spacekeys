@@ -1,4 +1,7 @@
-import { App, Plugin, PluginSettingTab, Notice, Setting, normalizePath, TFile, Modal, Scope, KeymapContext, KeymapEventHandler, MarkdownView, debounce, EventRef } from 'obsidian';
+import {
+	App, Plugin, PluginSettingTab, Notice, Setting, normalizePath, TFile, Modal, Scope,
+	KeymapContext, KeymapEventHandler, MarkdownView, debounce, EventRef, Command
+} from 'obsidian';
 
 import { CommandGroup } from "src/keys";
 import { HotkeysModal, FindCommandModal, HotkeysModalSettings, DEFAULT_HOTKEYSMODAL_SETTINGS, KeycodeGeneratorModal } from "src/modals";
@@ -69,6 +72,7 @@ function getBuiltinKeymap(name: string): CommandGroup | null {
 export default class SpacekeysPlugin extends Plugin {
 	settings: SpacekeysSettings;
 	keymap: CommandGroup;
+	lastCommand: Command | null = null;
 	spaceHandler: KeymapEventHandler | null = null;
 	// Event reference for file watcher, used to clean up when unloading the plugin
 	private fileWatcher: EventRef | null = null;
@@ -81,7 +85,7 @@ export default class SpacekeysPlugin extends Plugin {
 	);
 
 	async onload() {
-		console.log('Loading Spacekeys');
+		console.log('Loading plugin: Spacekeys');
 		debug_log('development build');
 
 		this.registerCommands()
@@ -141,6 +145,12 @@ export default class SpacekeysPlugin extends Plugin {
 				new KeycodeGeneratorModal(this.app).open();
 			},
 		});
+
+		this.addCommand({
+			id: 'repeat-last',
+			name: 'Repeat last command',
+			callback: () => this.repeatLastCommand(),
+		});
 	}
 
 	async loadSettings() {
@@ -168,7 +178,21 @@ export default class SpacekeysPlugin extends Plugin {
 	 * Activate the leader modal.
 	 */
 	activateLeader() {
-		new HotkeysModal(this.app, this.keymap, this.settings.modal).open();
+		new HotkeysModal(this).open();
+	}
+
+	/**
+	 * Repeat the last command executed by the leader modal.
+	 */
+	repeatLastCommand() {
+		if (!this.lastCommand)
+			new Notice('No last command to repeat');
+		else if (this.lastCommand.id === 'spacekeys:repeat-last')
+			// This shouldn't happen, should have been checked in HotkeysModal
+			console.warn('Last command was repeat-last!')
+		else
+			// @ts-expect-error: not-typed
+			this.app.commands.executeCommand(this.lastCommand);
 	}
 
 	/**

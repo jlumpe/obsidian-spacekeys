@@ -8,7 +8,7 @@ import type SpacekeysPlugin from './main';
 
 
 function keySeqBasicRepr(keys: KeyPress[]): string {
-	return keys.map(kp => kp.basicRepr()).join(' ');
+	return keys.map(kp => kp.repr()).join(' ');
 }
 
 
@@ -251,7 +251,7 @@ export class HotkeysModal extends Modal {
 	}
 
 	renderKey(key: KeyPress, el: HTMLElement) {
-		const repr = key.fancyRepr();
+		const repr = key.repr(true);
 		el.addClass('spacekeys-suggestion-key');
 		// el.appendText(repr);
 		el.createEl('kbd', {text: repr});

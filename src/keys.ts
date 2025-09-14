@@ -16,10 +16,8 @@ const BASIC_REPRS: {[key: string]: string} = {
 
 const FANCY_REPRS: {[key: string]: string} = {
 	// ' ': '␣',
-	' ': 'SPC',
 	enter: '↵',
 	// tab: '⇥',
-	tab: 'TAB',
 	backspace: '⌫',
 	arrowup: '↑',
 	arrowdown: '↓',
@@ -150,49 +148,33 @@ export class KeyPress {
 	}
 
 	/**
-	 * Basic textual representation of the keypress.
+	 * Textual representation of the keypress.
+	 * @param fancy Use fancy unicode characters.
 	 */
-	basicRepr(): string {
+	repr(fancy: boolean = false): string {
 		let s = '';
 
 		if (this.ctrl)
-			s += 'C';
+			s += fancy ? '^' : 'C';
 		if (this.shift && !shouldIgnoreShift(this.key))
-			s += 'S';
+			s += fancy ? '⇧' : 'S';
 		if (this.alt)
-			s += 'A';
+			s += fancy ? '⎇' : 'A';
 		if (this.meta)
-			s += 'M';
+			s += fancy ? '⊞' : 'M';  // TODO: Mac command key symbol
 
-		if (s)
+		if (s && !fancy)
 			s += '-';
 
-		if (this.key in BASIC_REPRS)
+		if (fancy && this.key in FANCY_REPRS)
+			s += FANCY_REPRS[this.key];
+		else if (this.key in BASIC_REPRS)
 			s += BASIC_REPRS[this.key];
-		else if (this.key.length > 1)
+		else if (!fancy && this.key.length > 1)
+			// Convert multi-letter codes to upper case
 			s += this.key.toUpperCase();
 		else
 			s += this.key;
-
-		return s;
-	}
-
-	/**
-	 * Fancy textual representation of the keypress.
-	 */
-	fancyRepr(): string {
-		let s = '';
-
-		if (this.ctrl)
-			s += '^';
-		if (this.shift && !shouldIgnoreShift(this.key))
-			s += '⇧';
-		if (this.alt)
-			s += '⎇';
-		if (this.meta)
-			s += '⊞';  // TODO: Mac command key symbol
-
-		s += FANCY_REPRS[this.key] ?? this.key;
 
 		return s;
 	}

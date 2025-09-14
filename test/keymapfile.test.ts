@@ -3,8 +3,8 @@ import { mockObsidian } from "./common";
 mockObsidian();
 
 
-import { KeyPress, KeyModifiers, KeymapGroup, KeymapCommand, KeymapItem } from "src/keys";
-import { parseKey, keymapItemFromYAML, unparseKey, parseKeymapYAML, parseKeymapMD, makeKeymapMarkdown } from "src/keymapfile";
+import { KeyPress, KeyModifiers, KeymapGroup, KeymapCommand, KeymapItem, KeymapFile } from "src/keys";
+import { parseKey, keymapItemFromYAML, unparseKey, parseKeymapYAML, parseKeymapMD, makeKeymapMarkdown, KeymapParseError } from "src/keymapfile";
 import { INCLUDED_KEYMAPS_YAML } from 'src/include';
 
 
@@ -108,16 +108,24 @@ describe('parseKey', () => {
 /*                                          Command items                                         */
 /* ---------------------------------------------------------------------------------------------- */
 
-function checkCommand(cmd: any, command_id: string, description: string | null) {
+function checkCommand(cmd: any, command_id: string, description: string | null = null): void {
 	expect(cmd).toBeInstanceOf(KeymapCommand);
 	expect(cmd).toHaveProperty('command_id', command_id);
 	expect(cmd).toHaveProperty('description', description);
 }
 
+
+function checkFile(cmd: any, file_path: string, description: string | null = null): void {
+	expect(cmd).toBeInstanceOf(KeymapFile);
+	expect(cmd).toHaveProperty('file_path', file_path);
+	expect(cmd).toHaveProperty('description', description);
+}
+
+
 /**
  * Compare two keymap items for equality.
  */
-function compareKeymapItems(item1: KeymapItem, item2: KeymapItem, path?: string[]) {
+function compareKeymapItems(item1: KeymapItem, item2: KeymapItem, path?: string[]): void {
 	path ??= [];
 
 	if (item1 instanceof KeymapCommand) {
@@ -142,7 +150,7 @@ function compareKeymapItems(item1: KeymapItem, item2: KeymapItem, path?: string[
 }
 
 
-describe('Parse command item', () => {
+describe('Parse keymap item', () => {
 	test('Command short form', () => {
 		const item = keymapItemFromYAML('   foo:bar ', []);
 		checkCommand(item, 'foo:bar', null);
@@ -157,7 +165,13 @@ describe('Parse command item', () => {
 		const item2 = keymapItemFromYAML({command: 'foo:bar', description: 'desc'}, []);
 		checkCommand(item2, 'foo:bar', 'desc');
 	});
-	test('Command group', () => {
+	test('File', () => {
+		const item1 = keymapItemFromYAML({file: 'Test.md'}, []);
+		checkFile(item1, 'Test.md', null);
+		const item2 = keymapItemFromYAML({file: 'Test.md', description: 'desc'}, []);
+		checkFile(item2, 'Test.md', 'desc');
+	});
+	test('Group', () => {
 		const data = {
 			description: 'group1',
 			items: {
@@ -171,7 +185,7 @@ describe('Parse command item', () => {
 		expect(item.children[0]).toHaveProperty('key', parseKeyStrict('c-enter'));
 		checkCommand(item.children[0].item, 'foo:bar', 'desc');
 	});
-	test('Extend command groups', () => {
+	test('Extend group', () => {
 		// Group to be extended
 		const data_orig = {
 			items: {
@@ -256,10 +270,53 @@ describe('Parse command item', () => {
 		expect(expected).toBeInstanceOf(KeymapGroup);
 		compareKeymapItems(extended, expected);
 	});
-	test.todo('Invalid: Mixed command: + items:');
-	test.todo('Invalid: No command: or items:');
-	test.todo('Invalid: Empty command ID');
-	test.todo('Invalid: Invalid types?');
+});
+
+
+/**
+ * Expect keymapItemFromYAML(data) to raise a parse error.
+ * @param data
+ * @param msg Error message must match this (exactly if string).
+ */
+function expectParseFailure(data: any, msg: string | RegExp | null = null): void {
+	const path = ['foo', 'bar'];
+	try {
+		keymapItemFromYAML(data, path);
+
+	} catch (error) {
+		expect(error).toBeInstanceOf(KeymapParseError);
+		error = error as KeymapParseError;
+
+		// Check path
+		expect(error.path.length).toBeGreaterThanOrEqual(path.length);
+		expect(error.path.slice(0, path.length)).toEqual(path);
+
+		// Check message
+		if (typeof msg === 'string')
+			expect(error).toHaveProperty('message', msg);
+		else if (msg instanceof RegExp)
+			expect(error.message).toMatch(msg);
+		return;
+	}
+
+	fail('Did not throw');
+}
+
+
+describe('Parse invalid keymap item', () => {
+	test('Mixed attributes', () => {
+		expectParseFailure({items: {}, command: 'foo:bar'});
+		expectParseFailure({items: {}, file: 'Test.md'});
+		expectParseFailure({command: 'foo:bar', file: 'Test.md'});
+	});
+	test('Missing attributes', () => {
+		expectParseFailure({description: 'blah'});
+	});
+	test('Empty command ID', () => {
+		expectParseFailure({command: ''}, /empty/i);
+		expectParseFailure('', /empty/i);
+	});
+	test.todo('Invalid types');
 });
 
 

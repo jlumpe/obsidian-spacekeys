@@ -185,7 +185,7 @@ export class HotkeysModal extends Modal {
 			this.close()
 			return;
 		}
-		
+
 		if (item instanceof FileRef) {
 			// Open file
 			this.openFile(item.file_path);
@@ -234,7 +234,7 @@ export class HotkeysModal extends Modal {
 				item: child.item,
 				command: child.item instanceof CommandRef ? getCommandById(this.app, child.item.command_id) : null,
 			};
-			if (this.settings.showInvalid 
+			if (this.settings.showInvalid
 				|| !(child.item instanceof CommandRef && suggestion.command === null)
 				|| child.item instanceof FileRef)
 				suggestions.push(suggestion);
@@ -253,19 +253,19 @@ export class HotkeysModal extends Modal {
 		const b_group = b.item instanceof CommandGroup;
 		const a_file = a.item instanceof FileRef;
 		const b_file = b.item instanceof FileRef;
-		
+
 		// Groups first
 		if (a_group && !b_group)
 			return -1;
 		else if (b_group && !a_group)
 			return 1;
-		
+
 		// Then files
 		if (a_file && !b_file)
 			return -1;
 		else if (b_file && !a_file)
 			return 1;
-			
+
 		// Then by key
 		return KeyPress.compare(a.key, b.key);
 	}
@@ -309,7 +309,7 @@ export class HotkeysModal extends Modal {
 			// File reference
 			el.addClass('spacekeys-file');
 			description ??= `Open: ${suggestion.item.file_path}`;
-			
+
 		} else {
 			// Group
 			el.addClass('spacekeys-group');

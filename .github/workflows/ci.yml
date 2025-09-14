@@ -1,7 +1,8 @@
-name: Release Obsidian plugin
-
 on:
+  pull_request:
   push:
+    branches:
+      - "*"
     tags:
       - "*"
 
@@ -22,7 +23,12 @@ jobs:
           npm install
           npm run build
 
+      - name: Test
+        run: npm test
+
       - name: Create release
+        # Run only on tagged release
+        if: github.ref_type == 'tag'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

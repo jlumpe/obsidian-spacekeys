@@ -1,4 +1,4 @@
-// import YAML from "yaml";
+import YAML from "yaml";
 
 
 /**
@@ -8,8 +8,7 @@ export function mockObsidian() {
 	jest.mock(
 		'obsidian',
 		() => ({
-			// Not currently needed - no tests for YAML parsing funcs
-			// parseYaml: YAML.parse,
+			parseYaml: YAML.parse,
 		}),
 		{virtual: true},
 	);

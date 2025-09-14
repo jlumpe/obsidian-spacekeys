@@ -9,7 +9,24 @@ if you want to view the source, please visit the github repository of this plugi
 */
 `;
 
-const prod = (process.argv[2] === "production");
+let prod = false;
+
+
+// Check CLI arguments
+if (process.argv.length > 3) {
+	console.error('Usage: node esbuild.config.mjs ["prod"|"dev"]');
+	// console.error('Usage: %s %s ["prod"|"dev"]', process.argv[0], process.argv[1]);
+	process.exit(1);
+}
+
+let buildenv = process.argv[2] ?? 'dev';
+if (buildenv == 'production' || buildenv == 'prod') {
+	prod = true;
+} else if (buildenv != 'develop' && buildenv != 'dev') {
+	console.error('Invalid build environment: %s', buildenv);
+	process.exit(1);
+}
+
 
 const context = await esbuild.context({
 	banner: {
@@ -42,6 +59,10 @@ const context = await esbuild.context({
 	loader: {
 		'.yml': 'text',
 		'.md': 'text',
+	},
+	alias: {
+		// A somewhat hacky way altering behavior based on whether it is a production or dev build
+		'src/debug': prod ? 'src/debug-prod' : 'src/debug',
 	},
 });
 

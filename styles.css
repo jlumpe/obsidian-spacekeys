@@ -129,3 +129,30 @@ input.spacekeys-key-code-generator {
 	font-family: monospace;
 	font-size: var(--font-ui-large);
 }
+
+
+.modal.spacekeys-keymap-error {
+	dl {
+		margin-top: 1em;
+		margin-bottom: 1em;
+
+		display: grid;
+		/* 2nd column takes all the space */
+		grid-template-columns: 0fr 1fr;
+		gap: .5em 1.5em;
+
+		dt {
+			font-weight: bold;
+			white-space: nowrap;
+		}
+
+		dt, dd {
+			margin: 0;
+		}
+
+		dd pre {
+			text-wrap: wrap;
+			margin: 0;
+		}
+	}
+}

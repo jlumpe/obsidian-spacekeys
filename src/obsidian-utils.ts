@@ -1,4 +1,7 @@
-import { App, TFile, PaneType, Modal, FileView, WorkspaceLeaf, Workspace, Command, SuggestModal, Notice } from 'obsidian';
+import { App, TFile, PaneType, Modal, FileView, WorkspaceLeaf, Workspace, Command, SuggestModal, MarkdownView, Notice } from 'obsidian';
+import { EditorView } from "@codemirror/view";
+import { getCM } from "@replit/codemirror-vim";
+
 
 /**
  * Get command from app by ID.
@@ -10,6 +13,7 @@ export function getCommandById(app: App, id: string): Command | null {
 	return result ?? null;
 }
 
+
 /**
  * Get list of all defined commands, including commands not available in the current context.
  * As with the previous function, this doesn't appear to be in the official API.
@@ -18,6 +22,7 @@ export function listCommands(app: App): Command[] {
 	// @ts-expect-error: not-typed
 	return Object.values(app.commands.commands);
 }
+
 
 /**
  * Find an existing workspace leaf that is viewing the given file.
@@ -29,6 +34,7 @@ function findLeafWithFile(workspace: Workspace, file: TFile): WorkspaceLeaf | nu
 	}
 	return null;
 }
+
 
 /**
  * @prop newLeaf - Argument to app.workspace.getLeaf().
@@ -46,6 +52,7 @@ export interface OpenFileOpts {
 	external?: boolean;
 }
 
+
 /**
  * Find a file by name, with or without extension.
  * This function will search for files with the given name, regardless of their location in the vault.
@@ -56,15 +63,16 @@ export interface OpenFileOpts {
 export function findFileByName(app: App, fileName: string): TFile | null {
 	// Remove .md extension if present
 	const baseName = fileName.endsWith('.md') ? fileName.slice(0, -3) : fileName;
-	
+
 	// Get all markdown files in the vault
 	const files = app.vault.getMarkdownFiles();
-	
+
 	// Find the first file that matches the name (case insensitive)
 	const file = files.find(f => f.basename.toLowerCase() === baseName.toLowerCase()) || null;
-	
+
 	return file;
 }
+
 
 /**
  * Open the given file in the vault.
@@ -73,19 +81,19 @@ export function findFileByName(app: App, fileName: string): TFile | null {
  */
 export async function openFile(app: App, file: string | TFile, opts: OpenFileOpts = {}) {
 	let tfile: TFile | null = null;
-	
+
 	if (file instanceof TFile) {
 		tfile = file;
 	} else {
 		// First try to get file by exact path
 		tfile = app.vault.getFileByPath(file);
-		
+
 		// If not found, try to find by name
 		if (!tfile) {
 			tfile = findFileByName(app, file);
 		}
 	}
-	
+
 	if (!tfile) {
 		new Notice(`File not found: ${file}`);
 		return;
@@ -112,6 +120,20 @@ export async function openFile(app: App, file: string | TFile, opts: OpenFileOpt
 		new Notice(`File not found:\n${file}`);
 	}
 }
+
+
+type YesNoCallback = (result: boolean) => void;
+interface YesNoOpts {
+	default?: boolean;
+	message?: string;
+	title?: string;
+	yesText?: string;
+	noText?: string;
+	yesCls?: string | null;
+	noCls?: string | null;
+	callback?: YesNoCallback;
+}
+
 
 /**
  * Modal which presents a yes/no option to the user.
@@ -176,14 +198,18 @@ export function addModalTitle(modal: SuggestModal<any>, text?: string): HTMLElem
 	return el;
 }
 
-type YesNoCallback = (result: boolean) => void;
-interface YesNoOpts {
-	default?: boolean;
-	message?: string;
-	title?: string;
-	yesText?: string;
-	noText?: string;
-	yesCls?: string | null;
-	noCls?: string | null;
-	callback?: YesNoCallback;
+
+/**
+ * Check if the MarkdownView's editor is focused and ready to insert text.
+ * If Vim mode is enabled, return False unless in insert mode.
+ */
+export function isInserting(view: MarkdownView): boolean {
+	if (!view.editor.hasFocus())
+		return false;
+
+	// @ts-expect-error: not-typed
+	const ev = view.editor.cm as EditorView;
+
+	const cm = getCM(ev);
+	return cm?.state.vim?.insertMode ?? true;
 }

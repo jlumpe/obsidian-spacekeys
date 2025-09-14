@@ -272,12 +272,12 @@ export class KeymapGroup {
 	 * @param strict - If we reach a non-group item before running out of key characters, return
 	 *                 null (strict=true) or the item (strict=false).
 	 */
-	find(keys: KeyPress[], strict = false): KeymapItem | null {
+	find(keys: KeyPress[], strict: boolean = false): KeymapItem | null {
 		let selected: KeymapItem = this;
 		let child: KeymapItem | null;
 
 		for (const key of keys) {
-			if (selected instanceof KeymapCommand || selected instanceof KeymapFile)
+			if (!(selected instanceof KeymapGroup))
 				return strict ? null : selected;
 
 			child = selected.getChild(key);

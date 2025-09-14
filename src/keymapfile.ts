@@ -1,6 +1,6 @@
 import { parseYaml } from "obsidian";
 import { KeyModifiers, KeyPress, KEYCODE_REGEXP, shouldIgnoreShift, KeymapCommand, KeymapGroup, KeymapItem, KeymapFile } from "src/keys";
-import { assert, splitFirst } from "src/util";
+import { assert, assertNever, splitFirst } from "src/util";
 
 import KEYMAP_MARKDOWN_HEADER from "include/keymaps/markdown-header.md";
 
@@ -214,51 +214,58 @@ export function keymapItemFromYAML(data: YAMLData, path: ParsePath, extend?: Key
 	if (typeof data === 'string') {
 		// Short form command
 
+		if (!data)
+			parseError('Empty string not allowed', path, data);
 		const [cmd, desc] = splitFirst(data.trim(), ' ');
-		item = new KeymapCommand(cmd, desc?.trim());
+		return new KeymapCommand(cmd, desc?.trim() || null);
 
-	} else if (isYAMLObject(data)) {
-		if ('items' in data) {
-			if ('command' in data)
-				parseError('Object has both "items" and "command" properties', path, data);
-			if ('file' in data)
-				parseError('Object has both "items" and "file" properties', path, data);
-
-			item = keymapGroupFromYAML(data, path, extend);
-
-		} else if ('command' in data) {
-			if (typeof data.command !== 'string')
-				parseError('Expected string', path, data.command, ['command']);
-			if ('file' in data)
-				parseError('Object has both "command" and "file" properties', path, data);
-
-			item = new KeymapCommand(data.command);
-
-		} else if ('file' in data) {
-			if (typeof data.file !== 'string')
-				parseError('Expected string', path, data.file, ['file']);
-
-			item = new KeymapFile(data.file);
-
-		} else {
-			parseError('Object must have either "items", "command", or "file" property', path, data);
-		}
-
-		if ("description" in data) {
-			if (typeof data.description !== 'string' && data.description !== null)
-				parseError('Expected string or null', path, data.description, ['description']);
-			item.description = data.description;
-		}
-
-	} else {
+	} else if (!isYAMLObject(data)) {
 		parseError('Expected string or object', path, data);
 	}
 
-	if (item instanceof KeymapCommand && !item.command_id)
-		parseError('Command ID cannot be empty', path, item.command_id, ['command']);
+	const isCommand = 'command' in data;
+	const isFile = 'file' in data;
+	const isGroup = 'items' in data;
 
-	if (item instanceof KeymapFile && !item.file_path)
-		parseError('File path cannot be empty', path, item.file_path, ['file']);
+	// None or more than one of the unique property names present
+	if ((+isCommand) + (+isFile) + (+isGroup) != 1)
+		parseError('Object must have exactly one of the following properties: "items", "command", or "file"', path, data);
+
+	// Command
+	if (isCommand) {
+		if (typeof data.command !== 'string')
+			parseError('Expected string', path, data.command, ['command']);
+		if (!data.command)
+			parseError('Command ID cannot be empty', path, data.command, ['command']);
+
+		item = new KeymapCommand(data.command);
+
+	// File
+	} else if (isFile) {
+		if (typeof data.file !== 'string')
+			parseError('Expected string', path, data.command, ['file']);
+		if (!data.file)
+			parseError('File name cannot be empty', path, data.command, ['file']);
+
+		item = new KeymapFile(data.file);
+
+	// Group
+	} else if (isGroup) {
+		item = keymapGroupFromYAML(data, path, extend);
+
+	} else {
+		// Condition checked above
+		assertNever();
+	}
+
+	// Add description
+	if ("description" in data) {
+		if (typeof data.description !== 'string' && data.description !== null)
+			parseError('Expected string or null', path, data.description, ['description']);
+		item.description = data.description || null;
+	}
+
+	// TODO: error on extra properties?
 
 	return item;
 }

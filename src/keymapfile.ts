@@ -105,18 +105,19 @@ export function parseKey(s: string): ParseKeySuccess | ParseKeyError {
 			return baseError;
 
 		for (let i = 0; i < modstr.length; i++) {
-			if (modstr[i] == 'c')
+			const m = modstr[i].toLowerCase();
+			if (m == 'c')
 				mods.ctrl = true;
-			else if (modstr[i] == 's')
+			else if (m == 's')
 				mods.shift = true;
-			else if (modstr[i] == 'a')
+			else if (m == 'a')
 				mods.alt = true;
-			else if (modstr[i] == 'm')
+			else if (m == 'm')
 				mods.meta = true;
 			else
 				return {
 					success: false,
-					error: 'Invalid modifier code: ' + modstr[i].toUpperCase(),
+					error: 'Invalid modifier code: ' + modstr[i],
 				};
 		}
 	} else {

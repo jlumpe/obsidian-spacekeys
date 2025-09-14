@@ -51,11 +51,12 @@ describe('parseKey', () => {
 	});
 	test('modifiers', () => {
 		testParseKey('c-enter', 'enter', {ctrl: true});
+		testParseKey('C-enter', 'enter', {ctrl: true});
 		testParseKey('s-enter', 'enter', {shift: true});
 		testParseKey('a-enter', 'enter', {alt: true});
 		testParseKey('m-enter', 'enter', {meta: true});
 		testParseKey('csm-enter', 'enter', {ctrl: true, shift: true, meta: true});
-		testParseKey('mcs-enter', 'enter', {ctrl: true, shift: true, meta: true});
+		testParseKey('McS-enter', 'enter', {ctrl: true, shift: true, meta: true});
 	});
 	test('dash', () => {
 		testParseKey('-', '-');
@@ -66,8 +67,11 @@ describe('parseKey', () => {
 		testParseKeyInvalid('');
 		testParseKeyInvalid('!!!');
 		testParseKeyInvalid('01');
+		// Empty modifier string
 		testParseKeyInvalid('-enter');
+		// Invalid modifier code
 		testParseKeyInvalid('x-enter');
+		// Nothing after modifier
 		testParseKeyInvalid('c-');
 	});
 });

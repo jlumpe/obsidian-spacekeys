@@ -1,4 +1,8 @@
-:root {
+/* ---------------------------------------------------------------------------------------------- */
+/*                                            Variables                                           */
+/* ---------------------------------------------------------------------------------------------- */
+
+body {
 	--spacekeys-suggestions-column-width: 250px;
 	--spacekeys-suggestions-max-height: 40%;
 	--spacekeys-suggestion-group-color: var(--text-accent);
@@ -6,12 +10,22 @@
 	--spacekeys-suggestion-file-color: var(--text-normal);
 }
 
+
+/* ---------------------------------------------------------------------------------------------- */
+/*                                             General                                            */
+/* ---------------------------------------------------------------------------------------------- */
+
 .prompt .spacekeys-modal-title {
 	border-bottom: 1px solid var(--background-secondary);
 	font-size: var(--font-ui-small);
 	text-align: center;
 	padding: var(--size-4-2);
 }
+
+
+/* ---------------------------------------------------------------------------------------------- */
+/*                                          Primary modal                                         */
+/* ---------------------------------------------------------------------------------------------- */
 
 .spacekeys-modal {
 	position: absolute;
@@ -70,6 +84,7 @@
 				text-overflow: ellipsis;
 			}
 
+			/* Group */
 			&.spacekeys-group {
 				.spacekeys-suggestion-label {
 					color: var(--spacekeys-suggestion-group-color);
@@ -82,23 +97,28 @@
 				}
 			}
 
+			/* Comamnd */
 			&.spacekeys-command {
 				.spacekeys-suggestion-label {
 					color: var(--spacekeys-suggestion-command-color);
 				}
-				&.spacekeys-invalid {
-					.spacekeys-suggestion-label {
-						color: var(--text-error);
-					}
-				}
 			}
 
+			/* File */
 			&.spacekeys-file {
 				.spacekeys-suggestion-label {
 					color: var(--spacekeys-suggestion-file-color);
 				}
 			}
+
+			/* Invalid */
+			&.spacekeys-invalid {
+				.spacekeys-suggestion-label {
+					color: var(--text-error);
+				}
+			}
 		}
+
 	}
 
 	.spacekeys-modal-status {
@@ -130,6 +150,10 @@
 }
 
 
+/* ---------------------------------------------------------------------------------------------- */
+/*                                      "Find key code" modal                                     */
+/* ---------------------------------------------------------------------------------------------- */
+
 input.spacekeys-key-code-generator {
 	width: 100%;
 	font-family: monospace;
@@ -137,6 +161,11 @@ input.spacekeys-key-code-generator {
 }
 
 
+/* ---------------------------------------------------------------------------------------------- */
+/*                                             Others                                             */
+/* ---------------------------------------------------------------------------------------------- */
+
+/* Modal displaying keymap parse error. */
 .modal.spacekeys-keymap-error {
 	dl {
 		margin-top: 1em;

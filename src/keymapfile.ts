@@ -6,7 +6,7 @@ import KEYMAP_MARKDOWN_HEADER from "include/keymaps/markdown-header.md";
 
 
 type YAMLObject = {[key: string]: YAMLData};
-type YAMLData = YAMLObject | Array<YAMLData> | string | number | null;
+type YAMLData = YAMLObject | Array<YAMLData> | string | number | boolean | null;
 
 
 function isYAMLObject(value: YAMLData): value is YAMLObject {

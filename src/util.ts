@@ -1,9 +1,20 @@
+/* ---------------------------------------------------------------------------------------------- */
+/*                                             Errors                                             */
+/* ---------------------------------------------------------------------------------------------- */
+
 export class AssertionError extends Error {
 }
 
 export function assert(condition: any, msg?: string): asserts condition {
 	if (!condition)
 		throw new AssertionError(msg);
+}
+
+/**
+ * Assert that the current code path is unreachable.
+ */
+export function assertNever(): never {
+	throw new AssertionError("Shouldn't happen.");
 }
 
 
@@ -35,6 +46,11 @@ export function userErrorString(e: Error, alternate = '(internal error)'): strin
 }
 
 
+/* ---------------------------------------------------------------------------------------------- */
+/*                                              Types                                             */
+/* ---------------------------------------------------------------------------------------------- */
+
+
 /**
  * Check if a value is a regular object (not an array or null).
  */
@@ -55,6 +71,10 @@ export type RecursivePartial<T> = {
 		T[P];
 };
 
+
+/* ---------------------------------------------------------------------------------------------- */
+/*                                              Misc                                              */
+/* ---------------------------------------------------------------------------------------------- */
 
 /**
  * Merge properties of values + defaults, recursing into properties.
@@ -80,6 +100,10 @@ export function recursiveDefaults<T extends object>(values: RecursivePartial<T>,
 	return obj as T;
 }
 
+
+/* ---------------------------------------------------------------------------------------------- */
+/*                                             Strings                                            */
+/* ---------------------------------------------------------------------------------------------- */
 
 /**
  * Split a string by the first instance of a delimiter, if it exists.

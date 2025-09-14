@@ -1,5 +1,5 @@
 import { parseYaml } from "obsidian";
-import { KeyModifiers, KeyPress, KEYCODE_REGEXP, shouldIgnoreShift, CommandRef, CommandGroup, CommandItem } from "src/keys";
+import { KeyModifiers, KeyPress, KEYCODE_REGEXP, shouldIgnoreShift, CommandRef, CommandGroup, CommandItem, FileRef } from "src/keys";
 import { assert, splitFirst } from "src/util";
 
 import KEYMAP_MARKDOWN_HEADER from "include/keymaps/markdown-header.md";
@@ -221,17 +221,27 @@ export function commandItemFromYAML(data: YAMLData, path: ParsePath, extend?: Co
 		if ('items' in data) {
 			if ('command' in data)
 				parseError('Object has both "items" and "command" properties', path, data);
+			if ('file' in data)
+				parseError('Object has both "items" and "file" properties', path, data);
 
 			item = commandGroupFromYAML(data, path, extend);
 
 		} else if ('command' in data) {
 			if (typeof data.command !== 'string')
 				parseError('Expected string', path, data.command, ['command']);
+			if ('file' in data)
+				parseError('Object has both "command" and "file" properties', path, data);
 
 			item = new CommandRef(data.command);
 
+		} else if ('file' in data) {
+			if (typeof data.file !== 'string')
+				parseError('Expected string', path, data.file, ['file']);
+
+			item = new FileRef(data.file);
+
 		} else {
-			parseError('Object must have either "items" or "command" property', path, data);
+			parseError('Object must have either "items", "command", or "file" property', path, data);
 		}
 
 		if ("description" in data) {
@@ -246,6 +256,9 @@ export function commandItemFromYAML(data: YAMLData, path: ParsePath, extend?: Co
 
 	if (item instanceof CommandRef && !item.command_id)
 		parseError('Command ID cannot be empty', path, item.command_id, ['command']);
+
+	if (item instanceof FileRef && !item.file_path)
+		parseError('File path cannot be empty', path, item.file_path, ['file']);
 
 	return item;
 }

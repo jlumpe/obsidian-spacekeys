@@ -91,6 +91,11 @@ items:
       # m:
       #  command: file-explorer:move-file
       #  description: Move file
+
+  # Open a specific note with the key sequence "w"
+  w:
+    description: Specific Note
+    file: notename
 ```
 
 It contains two types of objects:
@@ -99,6 +104,7 @@ It contains two types of objects:
 
 **Commands** contain a `command` property that is the command ID to run (see below). They can also have `description` property, but if omitted Spacekeys will use the default description of the command. You can also use the short form, which is a single string consisting of the command ID optionally followed by a space and the description.
 
+**Files** contain a `file` property that is the path to the file to open. This allows you to quickly open specific notes in your vault. The file path can be relative to your vault root.
 
 ### Key codes
 

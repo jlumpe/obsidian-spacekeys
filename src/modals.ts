@@ -1,7 +1,7 @@
 import { App, Command, Notice, FuzzySuggestModal, KeymapContext, MarkdownView, Modal } from 'obsidian';
 
-import { KeyPress, CommandItem, CommandRef, CommandGroup } from "src/keys";
-import { addModalTitle, getCommandById, listCommands } from 'src/obsidian-utils';
+import { KeyPress, CommandItem, CommandRef, CommandGroup, FileRef } from "src/keys";
+import { addModalTitle, getCommandById, listCommands, openFile } from 'src/obsidian-utils';
 import { unparseKey } from './keymapfile';
 
 import type SpacekeysPlugin from './main';
@@ -186,6 +186,13 @@ export class HotkeysModal extends Modal {
 			return;
 		}
 
+		if (item instanceof FileRef) {
+			// Open file
+			this.openFile(item.file_path);
+			this.close()
+			return;
+		}
+
 		// Update status
 		const isEmpty = this.keySequence.length == 0;
 		this.statusEl.toggleClass('spacekeys-modal-status-empty', isEmpty);
@@ -242,12 +249,23 @@ export class HotkeysModal extends Modal {
 	compareSuggestions(a: CommandSuggestion, b: CommandSuggestion): number {
 		const a_group = a.item instanceof CommandGroup;
 		const b_group = b.item instanceof CommandGroup;
+		const a_file = a.item instanceof FileRef;
+		const b_file = b.item instanceof FileRef;
+
+		// Groups first
 		if (a_group && !b_group)
 			return -1;
 		else if (b_group && !a_group)
 			return 1;
-		else
-			return KeyPress.compare(a.key, b.key);
+
+		// Then files
+		if (a_file && !b_file)
+			return -1;
+		else if (b_file && !a_file)
+			return 1;
+
+		// Then by key
+		return KeyPress.compare(a.key, b.key);
 	}
 
 	renderKey(key: KeyPress, el: HTMLElement) {
@@ -284,6 +302,11 @@ export class HotkeysModal extends Modal {
 				el.addClass('spacekeys-invalid');
 				description ??= suggestion.item.command_id;
 			}
+
+		} else if (suggestion.item instanceof FileRef) {
+			// File reference
+			el.addClass('spacekeys-file');
+			description ??= `Open: ${suggestion.item.file_path}`;
 
 		} else {
 			// Group
@@ -356,6 +379,17 @@ export class HotkeysModal extends Modal {
 		frag.appendText('Invalid key sequence: ');
 		frag.createEl('code', {text: keyseq});
 		new Notice(frag);
+	}
+
+	/**
+	 * Open file.
+	 */
+	openFile(file_path: string): void {
+		try {
+			openFile(this.app, file_path, { newLeaf: 'tab' });
+		} catch (error) {
+			new Notice(`Error opening file: ${file_path}`);
+		}
 	}
 }
 

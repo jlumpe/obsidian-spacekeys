@@ -169,6 +169,9 @@ The following variables can be customized through [CSS snippets](https://help.ob
 | -------------------------------------- | ------ | ------- | ------------------------------------ |
 | `--spacekeys-suggestions-column-width` | Length | `250px` | Maximum width of suggestions column. |
 | `--spacekeys-suggestions-max-height`   | Length | `40%`   | Maximum height of suggestions area.  |
+| `--spacekeys-suggestion-group-color`   | Color  | `var(--text-accent)` | Text color of groups in suggestions area. |
+| `--spacekeys-suggestion-command-color` | Color  | `var(--text-normal)` | Text color of commands in suggestions area. |
+| `--spacekeys-suggestion-file-color`    | Color  | `var(--text-normal)` | Text color of files in suggestions area. |
 
 
 ## Roadmap

@@ -1,6 +1,9 @@
 :root {
 	--spacekeys-suggestions-column-width: 250px;
 	--spacekeys-suggestions-max-height: 40%;
+	--spacekeys-suggestion-group-color: var(--text-accent);
+	--spacekeys-suggestion-command-color: var(--text-normal);
+	--spacekeys-suggestion-file-color: var(--text-normal);
 }
 
 .prompt .spacekeys-modal-title {
@@ -69,7 +72,7 @@
 
 			&.spacekeys-group {
 				.spacekeys-suggestion-label {
-					color: var(--text-accent);
+					color: var(--spacekeys-suggestion-group-color);
 				}
 
 				.spacekeys-suggestion-key kbd {
@@ -80,6 +83,9 @@
 			}
 
 			&.spacekeys-command {
+				.spacekeys-suggestion-label {
+					color: var(--spacekeys-suggestion-command-color);
+				}
 				&.spacekeys-invalid {
 					.spacekeys-suggestion-label {
 						color: var(--text-error);
@@ -89,7 +95,7 @@
 
 			&.spacekeys-file {
 				.spacekeys-suggestion-label {
-					color: var(--text-accent);
+					color: var(--spacekeys-suggestion-file-color);
 				}
 			}
 		}

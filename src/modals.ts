@@ -234,9 +234,7 @@ export class HotkeysModal extends Modal {
 				item: child.item,
 				command: child.item instanceof CommandRef ? getCommandById(this.app, child.item.command_id) : null,
 			};
-			if (this.settings.showInvalid
-				|| !(child.item instanceof CommandRef && suggestion.command === null)
-				|| child.item instanceof FileRef)
+			if (this.settings.showInvalid || !(child.item instanceof CommandRef && suggestion.command === null))
 				suggestions.push(suggestion);
 		}
 

@@ -5,6 +5,10 @@ import { assert, splitFirst } from "src/util";
 import KEYMAP_MARKDOWN_HEADER from "include/keymaps/markdown-header.md";
 
 
+/* ---------------------------------------------------------------------------------------------- */
+/*                                         YAML utilities                                         */
+/* ---------------------------------------------------------------------------------------------- */
+
 type YAMLObject = {[key: string]: YAMLData};
 type YAMLData = YAMLObject | Array<YAMLData> | string | number | boolean | null;
 
@@ -20,6 +24,10 @@ function isYAMLObject(value: YAMLData): value is YAMLObject {
  */
 type ParsePath = Array<string | number>;
 
+
+/* ---------------------------------------------------------------------------------------------- */
+/*                                             Errors                                             */
+/* ---------------------------------------------------------------------------------------------- */
 
 interface KeymapParseErrorOptions {
 	path: ParsePath | null;
@@ -53,6 +61,10 @@ function parseError(msg: string, path: ParsePath, data?: YAMLData, extraPath?: P
 	throw new KeymapParseError(msg, {path: extraPath ? path.concat(extraPath) : path, data: data});
 }
 
+
+/* ---------------------------------------------------------------------------------------------- */
+/*                                        Key code parsing                                        */
+/* ---------------------------------------------------------------------------------------------- */
 
 /**
  * Aliases when parsing key codes.
@@ -175,6 +187,10 @@ export function unparseKey(kp: KeyPress): string {
 }
 
 
+/* ---------------------------------------------------------------------------------------------- */
+/*                                     Create from parsed YAML                                    */
+/* ---------------------------------------------------------------------------------------------- */
+
 /**
  * Create keymap from parsed YAML data.
  */
@@ -279,6 +295,10 @@ function commandGroupFromYAML(data: YAMLObject, path: ParsePath, extend?: Comman
 	return group;
 }
 
+
+/* ---------------------------------------------------------------------------------------------- */
+/*                                      Complete file parsing                                     */
+/* ---------------------------------------------------------------------------------------------- */
 
 /**
  * Parse keymap from plain YAML.

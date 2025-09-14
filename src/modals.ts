@@ -7,6 +7,11 @@ import { unparseKey } from './keymapfile';
 import type SpacekeysPlugin from './main';
 
 
+/* ---------------------------------------------------------------------------------------------- */
+/*                                          Hotkeys modal                                         */
+/* ---------------------------------------------------------------------------------------------- */
+
+
 function keySeqBasicRepr(keys: KeyPress[]): string {
 	return keys.map(kp => kp.repr()).join(' ');
 }
@@ -108,6 +113,8 @@ export class HotkeysModal extends Modal {
 		this.setCollapsed(true);
 	}
 
+	/* --------------------------------------- Expand/collapse -------------------------------------- */
+
 	/**
 	 * Set the timer to expand the suggestions part of the modal if delay is enabled.
 	 * If there is currently a timer in progress, reset it.
@@ -147,6 +154,8 @@ export class HotkeysModal extends Modal {
 		this.isCollapsed = status;
 		this.containerEl.toggleClass('spacekeys-modal-collapsed', status);
 	}
+
+	/* --------------------------------- Handle keypresses + update --------------------------------- */
 
 	/**
 	 * Handle keypress.
@@ -268,6 +277,8 @@ export class HotkeysModal extends Modal {
 		return KeyPress.compare(a.key, b.key);
 	}
 
+	/* ------------------------------------------ Rendering ----------------------------------------- */
+
 	renderKey(key: KeyPress, el: HTMLElement) {
 		const repr = key.repr(true);
 		el.addClass('spacekeys-suggestion-key');
@@ -328,6 +339,8 @@ export class HotkeysModal extends Modal {
 		else
 			return cmdname;
 	}
+
+	/* -------------------------------------- Handle selections ------------------------------------- */
 
 	/**
 	 * Try executing the suggestion.
@@ -392,6 +405,11 @@ export class HotkeysModal extends Modal {
 		}
 	}
 }
+
+
+/* ---------------------------------------------------------------------------------------------- */
+/*                                          Other modals                                          */
+/* ---------------------------------------------------------------------------------------------- */
 
 
 /**

@@ -3,6 +3,10 @@ import { EditorView } from "@codemirror/view";
 import { getCM } from "@replit/codemirror-vim";
 
 
+/* ---------------------------------------------------------------------------------------------- */
+/*                                            Commands                                            */
+/* ---------------------------------------------------------------------------------------------- */
+
 /**
  * Get command from app by ID.
  * This doesn't seem to be an officially supported API.
@@ -24,6 +28,10 @@ export function listCommands(app: App): Command[] {
 }
 
 
+/* ---------------------------------------------------------------------------------------------- */
+/*                                            Workspace                                           */
+/* ---------------------------------------------------------------------------------------------- */
+
 /**
  * Find an existing workspace leaf that is viewing the given file.
  */
@@ -35,6 +43,10 @@ function findLeafWithFile(workspace: Workspace, file: TFile): WorkspaceLeaf | nu
 	return null;
 }
 
+
+/* ---------------------------------------------------------------------------------------------- */
+/*                                              Files                                             */
+/* ---------------------------------------------------------------------------------------------- */
 
 /**
  * @prop newLeaf - Argument to app.workspace.getLeaf().
@@ -122,7 +134,12 @@ export async function openFile(app: App, file: string | TFile, opts: OpenFileOpt
 }
 
 
+/* ---------------------------------------------------------------------------------------------- */
+/*                                             Modals                                             */
+/* ---------------------------------------------------------------------------------------------- */
+
 type YesNoCallback = (result: boolean) => void;
+
 interface YesNoOpts {
 	default?: boolean;
 	message?: string;
@@ -198,6 +215,10 @@ export function addModalTitle(modal: SuggestModal<any>, text?: string): HTMLElem
 	return el;
 }
 
+
+/* ---------------------------------------------------------------------------------------------- */
+/*                                             Editor                                             */
+/* ---------------------------------------------------------------------------------------------- */
 
 /**
  * Check if the MarkdownView's editor is focused and ready to insert text.

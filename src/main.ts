@@ -3,7 +3,7 @@ import {
 	KeymapContext, KeymapEventHandler, MarkdownView, debounce, EventRef, Command
 } from 'obsidian';
 
-import { CommandGroup } from "src/keys";
+import { KeymapGroup } from "src/keys";
 import { HotkeysModal, FindCommandModal, HotkeysModalSettings, DEFAULT_HOTKEYSMODAL_SETTINGS, KeycodeGeneratorModal } from "src/modals";
 import { parseKeymapMD, parseKeymapYAML, KeymapParseError, guessKeymapFileFormat, KeymapFileFormat, makeKeymapMarkdown } from 'src/keymapfile';
 import { ConfirmModal, isInserting, openFile } from 'src/obsidian-utils';
@@ -47,7 +47,7 @@ interface TryLoadKeymapOptions {
 /**
  * Get a builtin keymap by name.
  */
-function getBuiltinKeymap(name: string): CommandGroup | null {
+function getBuiltinKeymap(name: string): KeymapGroup | null {
 	if (!(name in INCLUDED_KEYMAPS_YAML)) {
 		console.error('No builtin keymap named ' + name);
 		return null;
@@ -71,7 +71,7 @@ function getBuiltinKeymap(name: string): CommandGroup | null {
 
 export default class SpacekeysPlugin extends Plugin {
 	settings: SpacekeysSettings;
-	keymap: CommandGroup;
+	keymap: KeymapGroup;
 	lastCommand: Command | null = null;
 	spaceHandler: KeymapEventHandler | null = null;
 	// Event reference for file watcher, used to clean up when unloading the plugin
@@ -91,7 +91,7 @@ export default class SpacekeysPlugin extends Plugin {
 		this.registerCommands()
 
 		// Load default keymap
-		this.keymap = getBuiltinKeymap('default') ?? new CommandGroup();
+		this.keymap = getBuiltinKeymap('default') ?? new KeymapGroup();
 
 		await this.loadSettings();
 

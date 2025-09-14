@@ -1,5 +1,5 @@
 import { parseYaml } from "obsidian";
-import { KeyModifiers, KeyPress, KEYCODE_REGEXP, shouldIgnoreShift, CommandRef, CommandGroup, CommandItem, FileRef } from "src/keys";
+import { KeyModifiers, KeyPress, KEYCODE_REGEXP, shouldIgnoreShift, KeymapCommand, KeymapGroup, KeymapItem, KeymapFile } from "src/keys";
 import { assert, splitFirst } from "src/util";
 
 import KEYMAP_MARKDOWN_HEADER from "include/keymaps/markdown-header.md";
@@ -194,28 +194,28 @@ export function unparseKey(kp: KeyPress): string {
 /**
  * Create keymap from parsed YAML data.
  */
-function keymapFromYAML(data: YAMLData, extend?: CommandGroup): CommandGroup {
+function keymapFromYAML(data: YAMLData, extend?: KeymapGroup): KeymapGroup {
 	if (!isYAMLObject(data))
 		parseError('Root element not an object', [], data);
 
 	if (!('items' in data))
 		parseError('Expected "items" property', [], data);
 
-	const item = commandItemFromYAML(data, [], extend);
-	assert(item instanceof CommandGroup);
+	const item = keymapItemFromYAML(data, [], extend);
+	assert(item instanceof KeymapGroup);
 
 	return item;
 }
 
 
-export function commandItemFromYAML(data: YAMLData, path: ParsePath, extend?: CommandGroup): CommandItem {
-	let item: CommandItem;
+export function keymapItemFromYAML(data: YAMLData, path: ParsePath, extend?: KeymapGroup): KeymapItem {
+	let item: KeymapItem;
 
 	if (typeof data === 'string') {
 		// Short form command
 
 		const [cmd, desc] = splitFirst(data.trim(), ' ');
-		item = new CommandRef(cmd, desc?.trim());
+		item = new KeymapCommand(cmd, desc?.trim());
 
 	} else if (isYAMLObject(data)) {
 		if ('items' in data) {
@@ -224,7 +224,7 @@ export function commandItemFromYAML(data: YAMLData, path: ParsePath, extend?: Co
 			if ('file' in data)
 				parseError('Object has both "items" and "file" properties', path, data);
 
-			item = commandGroupFromYAML(data, path, extend);
+			item = keymapGroupFromYAML(data, path, extend);
 
 		} else if ('command' in data) {
 			if (typeof data.command !== 'string')
@@ -232,13 +232,13 @@ export function commandItemFromYAML(data: YAMLData, path: ParsePath, extend?: Co
 			if ('file' in data)
 				parseError('Object has both "command" and "file" properties', path, data);
 
-			item = new CommandRef(data.command);
+			item = new KeymapCommand(data.command);
 
 		} else if ('file' in data) {
 			if (typeof data.file !== 'string')
 				parseError('Expected string', path, data.file, ['file']);
 
-			item = new FileRef(data.file);
+			item = new KeymapFile(data.file);
 
 		} else {
 			parseError('Object must have either "items", "command", or "file" property', path, data);
@@ -254,18 +254,18 @@ export function commandItemFromYAML(data: YAMLData, path: ParsePath, extend?: Co
 		parseError('Expected string or object', path, data);
 	}
 
-	if (item instanceof CommandRef && !item.command_id)
+	if (item instanceof KeymapCommand && !item.command_id)
 		parseError('Command ID cannot be empty', path, item.command_id, ['command']);
 
-	if (item instanceof FileRef && !item.file_path)
+	if (item instanceof KeymapFile && !item.file_path)
 		parseError('File path cannot be empty', path, item.file_path, ['file']);
 
 	return item;
 }
 
 
-function commandGroupFromYAML(data: YAMLObject, path: ParsePath, extend?: CommandGroup): CommandGroup {
-	let group: CommandGroup;
+function keymapGroupFromYAML(data: YAMLObject, path: ParsePath, extend?: KeymapGroup): KeymapGroup {
+	let group: KeymapGroup;
 
 	// Check items is object (allow null to stand in for empty object)
 	if (!isYAMLObject(data.items) && data.items !== null)
@@ -279,7 +279,7 @@ function commandGroupFromYAML(data: YAMLObject, path: ParsePath, extend?: Comman
 	if (extend && data.clear !== true)
 		group = extend.copy();
 	else
-		group = new CommandGroup();
+		group = new KeymapGroup();
 
 	for (const keyStr in data.items) {
 		const value = data.items[keyStr];
@@ -298,10 +298,10 @@ function commandGroupFromYAML(data: YAMLObject, path: ParsePath, extend?: Comman
 
 		// Should existing child group be extended?
 		const existingChild = group.getChild(key);
-		const extendChild = existingChild instanceof CommandGroup ? existingChild : undefined;
+		const extendChild = existingChild instanceof KeymapGroup ? existingChild : undefined;
 
 		// Create/extend child
-		const child = commandItemFromYAML(value, path.concat(['items', keyStr]), extendChild);
+		const child = keymapItemFromYAML(value, path.concat(['items', keyStr]), extendChild);
 		group.setChild(key, child);
 	}
 
@@ -316,7 +316,7 @@ function commandGroupFromYAML(data: YAMLObject, path: ParsePath, extend?: Comman
 /**
  * Parse keymap from plain YAML.
  */
-export function parseKeymapYAML(lines: string, extend?: CommandGroup): CommandGroup {
+export function parseKeymapYAML(lines: string, extend?: KeymapGroup): KeymapGroup {
 	let data;
 
 	try {
@@ -332,7 +332,7 @@ export function parseKeymapYAML(lines: string, extend?: CommandGroup): CommandGr
 /**
  * Parse keymap from fenced code block in Markdown file.
  */
-export function parseKeymapMD(lines: string, extend?: CommandGroup): CommandGroup {
+export function parseKeymapMD(lines: string, extend?: KeymapGroup): KeymapGroup {
 	const yaml = findCodeBlock(lines);
 
 	if (!yaml)

@@ -1,6 +1,6 @@
 import { App, Command, Notice, FuzzySuggestModal, KeymapContext, MarkdownView, Modal } from 'obsidian';
 
-import { KeyPress, CommandItem, CommandRef, CommandGroup, FileRef } from "src/keys";
+import { KeyPress, KeymapItem, KeymapCommand, KeymapGroup, KeymapFile } from "src/keys";
 import { addModalTitle, getCommandById, listCommands, openFile } from 'src/obsidian-utils';
 import { unparseKey } from './keymapfile';
 
@@ -14,7 +14,7 @@ function keySeqBasicRepr(keys: KeyPress[]): string {
 
 interface CommandSuggestion {
 	key: KeyPress;
-	item: CommandItem;
+	item: KeymapItem;
 	command: Command | null;
 }
 
@@ -50,7 +50,7 @@ export const DEFAULT_HOTKEYSMODAL_SETTINGS: HotkeysModalSettings = {
 
 export class HotkeysModal extends Modal {
 	plugin: SpacekeysPlugin;
-	commands: CommandGroup;
+	commands: KeymapGroup;
 	settings: HotkeysModalSettings;
 
 	suggestionsEl: HTMLElement;
@@ -179,14 +179,14 @@ export class HotkeysModal extends Modal {
 	update() {
 		const item = this.commands.find(this.keySequence);
 
-		if (item instanceof CommandRef) {
+		if (item instanceof KeymapCommand) {
 			// Single command, run it
 			this.tryExec(item.command_id);
 			this.close()
 			return;
 		}
 
-		if (item instanceof FileRef) {
+		if (item instanceof KeymapFile) {
 			// Open file
 			this.openFile(item.file_path);
 			this.close()
@@ -224,7 +224,7 @@ export class HotkeysModal extends Modal {
 	 * Get list of next suggested keypress based on currently selected command group.
 	 * Filters out invalid commands (if !this.showInvalid) and sorts.
 	 */
-	getSuggestions(group: CommandGroup): CommandSuggestion[] {
+	getSuggestions(group: KeymapGroup): CommandSuggestion[] {
 
 		const suggestions: CommandSuggestion[] = [];
 
@@ -232,9 +232,9 @@ export class HotkeysModal extends Modal {
 			const suggestion = {
 				key: child.key,
 				item: child.item,
-				command: child.item instanceof CommandRef ? getCommandById(this.app, child.item.command_id) : null,
+				command: child.item instanceof KeymapCommand ? getCommandById(this.app, child.item.command_id) : null,
 			};
-			if (this.settings.showInvalid || !(child.item instanceof CommandRef && suggestion.command === null))
+			if (this.settings.showInvalid || !(child.item instanceof KeymapCommand && suggestion.command === null))
 				suggestions.push(suggestion);
 		}
 
@@ -247,10 +247,10 @@ export class HotkeysModal extends Modal {
 	 * Sorts groups before commands, then by key according to KeyPress.compare.
 	 */
 	compareSuggestions(a: CommandSuggestion, b: CommandSuggestion): number {
-		const a_group = a.item instanceof CommandGroup;
-		const b_group = b.item instanceof CommandGroup;
-		const a_file = a.item instanceof FileRef;
-		const b_file = b.item instanceof FileRef;
+		const a_group = a.item instanceof KeymapGroup;
+		const b_group = b.item instanceof KeymapGroup;
+		const a_file = a.item instanceof KeymapFile;
+		const b_file = b.item instanceof KeymapFile;
 
 		// Groups first
 		if (a_group && !b_group)
@@ -280,7 +280,7 @@ export class HotkeysModal extends Modal {
 
 		let description = suggestion.item.description;
 
-		if (suggestion.item instanceof CommandRef) {
+		if (suggestion.item instanceof KeymapCommand) {
 			// Single command
 			el.addClass('spacekeys-command');
 
@@ -303,7 +303,7 @@ export class HotkeysModal extends Modal {
 				description ??= suggestion.item.command_id;
 			}
 
-		} else if (suggestion.item instanceof FileRef) {
+		} else if (suggestion.item instanceof KeymapFile) {
 			// File reference
 			el.addClass('spacekeys-file');
 			description ??= `Open: ${suggestion.item.file_path}`;

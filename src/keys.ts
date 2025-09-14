@@ -191,13 +191,13 @@ export class KeyPress {
 /* ---------------------------------------------------------------------------------------------- */
 
 
-export type CommandItem = CommandRef | CommandGroup | FileRef;
+export type KeymapItem = KeymapGroup | KeymapCommand | KeymapFile;
 
 
 /**
  * Reference to a command.
  */
-export class CommandRef {
+export class KeymapCommand {
 	constructor(public command_id: string, public description: string | null = null) {
 	}
 }
@@ -206,18 +206,20 @@ export class CommandRef {
 /**
  * Reference to a file to be opened.
  */
-export class FileRef {
+export class KeymapFile {
 	constructor(public file_path: string, public description: string | null = null) {
 	}
 }
 
 
 /**
- * Group of commands.
+ * Group of commands in a key map.
+ *
+ * This either represents a nested group of commands or the entire keymap itself.
  */
-export class CommandGroup {
+export class KeymapGroup {
 	description: string | null;
-	children: {key: KeyPress, item: CommandItem}[];
+	children: {key: KeyPress, item: KeymapItem}[];
 
 	constructor(description: string | null = null) {
 		this.description = description;
@@ -229,10 +231,10 @@ export class CommandGroup {
 	}
 
 	/**
-	 * Add child command/group given next key in sequence.
+	 * Add child item given next key in sequence.
 	 * If a child already exists for the given keypress, overwrite it.
 	 */
-	setChild(key: KeyPress, item: CommandItem) {
+	setChild(key: KeyPress, item: KeymapItem) {
 		for (let i = 0; i < this.children.length; i++) {
 			if (this.children[i].key.equals(key)) {
 				this.children[i] = {key: key, item: item};
@@ -245,7 +247,7 @@ export class CommandGroup {
 	/**
 	 * Remove child matching keypress (if it exists).
 	 */
-	removeChild(key: KeyPress): CommandItem | null {
+	removeChild(key: KeyPress): KeymapItem | null {
 		for (let i = 0; i < this.children.length; i++) {
 			if (this.children[i].key.equals(key))
 				return this.children.splice(i, 1)[0].item;
@@ -256,7 +258,7 @@ export class CommandGroup {
 	/**
 	 * Get child matching keypress.
 	 */
-	getChild(key: KeyPress): CommandItem | null {
+	getChild(key: KeyPress): KeymapItem | null {
 		for (const child of this.children) {
 			if (child.key.equals(key))
 				return child.item;
@@ -267,15 +269,15 @@ export class CommandGroup {
 	/**
 	 * Get the item for the given sequence of keys.
 	 * @param keys - Sequence of key presses.
-	 * @param strict - If we reach a CommandRef before running out of key characters, return null
-	 *                 (strict=true) or the CommandRef (strict=false).
+	 * @param strict - If we reach a non-group item before running out of key characters, return
+	 *                 null (strict=true) or the item (strict=false).
 	 */
-	find(keys: KeyPress[], strict = false): CommandItem | null {
-		let selected: CommandItem = this;
-		let child: CommandItem | null;
+	find(keys: KeyPress[], strict = false): KeymapItem | null {
+		let selected: KeymapItem = this;
+		let child: KeymapItem | null;
 
 		for (const key of keys) {
-			if (selected instanceof CommandRef || selected instanceof FileRef)
+			if (selected instanceof KeymapCommand || selected instanceof KeymapFile)
 				return strict ? null : selected;
 
 			child = selected.getChild(key);
@@ -290,10 +292,10 @@ export class CommandGroup {
 	}
 
 	/**
-	 * Create a shallow copy of the group (down to the child CommandItems).
+	 * Create a shallow copy of the group (down to the child KeymapItem's).
 	 */
-	copy(): CommandGroup {
-		const copy = new CommandGroup(this.description);
+	copy(): KeymapGroup {
+		const copy = new KeymapGroup(this.description);
 		for (const child of this.children)
 			copy.children.push({...child});
 		return copy;

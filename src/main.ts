@@ -281,6 +281,14 @@ export default class SpacekeysPlugin extends Plugin {
 				return true;
 		}
 
+		// check if we are in the bases formula editor
+		// Should be changed to something more robust... Obviously this is very
+		// dependent on the structure of the page which might change.
+		// Once Bases API is out it will be cleaner to check this
+		if (document.activeElement instanceof HTMLElement &&
+		document.activeElement.parentElement?.parentElement?.parentElement?.classList.contains("formula-editor"))
+			return true
+
 		// Activate
 		this.activateLeader();
 		return false;

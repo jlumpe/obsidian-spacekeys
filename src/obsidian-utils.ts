@@ -1,4 +1,4 @@
-import { App, TFile, PaneType, Modal, FileView, WorkspaceLeaf, Workspace, Command, SuggestModal, MarkdownView, Notice } from 'obsidian';
+import { App, TFile, PaneType, Modal, FileView, WorkspaceLeaf, Workspace, Command, SuggestModal, MarkdownView, Notice, TFolder, Vault, TAbstractFile } from 'obsidian';
 import { EditorView } from "@codemirror/view";
 import { getCM } from "@replit/codemirror-vim";
 
@@ -36,11 +36,12 @@ export function listCommands(app: App): Command[] {
  * Find an existing workspace leaf that is viewing the given file.
  */
 function findLeafWithFile(workspace: Workspace, file: TFile): WorkspaceLeaf | null {
-	for (const leaf of workspace.getLeavesOfType('markdown')) {
+	let found: WorkspaceLeaf | null = null;
+	workspace.iterateRootLeaves((leaf: WorkspaceLeaf) => {
 		if (leaf.view instanceof FileView && leaf.view.file !== null && leaf.view.file.path === file.path)
-			return leaf;
-	}
-	return null;
+			found = leaf;
+	});
+	return found;
 }
 
 
@@ -48,26 +49,107 @@ function findLeafWithFile(workspace: Workspace, file: TFile): WorkspaceLeaf | nu
 /*                                              Files                                             */
 /* ---------------------------------------------------------------------------------------------- */
 
-
 /**
- * Find a file by name, with or without extension.
- * This function will search for files with the given name, regardless of their location in the vault.
- * @param app - The Obsidian app instance.
- * @param fileName - The name of the file to find, with or without extension.
+ * Find a file by name.
+ *
+ * Ignores case. Extension is optional for markdown files, required for other file types.
+ *
+ * If the file name contains slashes it is considered to be a path from the root of the vault (a
+ * leading slash is required to force interpretation as a path if the file is in the vault's root
+ * directory, otherwise it is optional). If there are no slashes the entire vault is searched for
+ * files with a matching name.
+ *
+ * @param vault - Vault to search within.
+ * @param fileName - File name/path to find.
  * @returns The found TFile or null if not found.
  */
-export function findFileByName(app: App, fileName: string): TFile | null {
-	// Remove .md extension if present
-	const baseName = fileName.endsWith('.md') ? fileName.slice(0, -3) : fileName;
+export function findFileByName(vault: Vault, fileName: string): TFile | null {
 
-	// Get all markdown files in the vault
-	const files = app.vault.getMarkdownFiles();
+	const is_md = fileName.endsWith('.md');
+	let to_search: Array<TAbstractFile>;
 
-	// Find the first file that matches the name (case insensitive)
-	const file = files.find(f => f.basename.toLowerCase() === baseName.toLowerCase()) || null;
+	if (fileName.contains('/')) {
+		// Contains slash - find in specific directory.
 
-	return file;
+		// Remove leading slash
+		if (fileName.startsWith('/'))
+			fileName = fileName.slice(1);
+
+		const parts = fileName.split('/');
+		fileName = parts[parts.length - 1];
+
+		const parent_dir = getVaultFolder(vault, parts.slice(0, -1));
+		if (!parent_dir)
+			return null;
+
+		to_search = parent_dir.children;
+
+	} else {
+		// No slash, search entire vault.
+		to_search = is_md ? vault.getMarkdownFiles() : vault.getFiles();
+	}
+
+	fileName = fileName.toLowerCase();
+	let found: TFile | null = null;
+
+	// Find file by name
+	for (const file of to_search) {
+		if (!(file instanceof TFile))
+			continue;
+
+		// Immediately return if matched with extension
+		if (file.name.toLowerCase() == fileName)
+			return file;
+
+		// Allow match to markdown file without extension
+		if (file.extension == 'md' && file.basename.toLowerCase() == fileName)
+			// If multiple matches, use first by alphabetical order of full path.
+			if (found === null || file.path < found.path)
+				found = file;
+	}
+
+	return found;
 }
+
+
+/**
+ * Get folder in vault using case-insensitive directory names.
+ * @param path Path from root of vault (single string or array of path components).
+ */
+function getVaultFolder(vault: Vault, path: string | Array<string>): TFolder | null {
+	let folder = vault.getRoot();
+	let found: boolean;
+	let parts: Array<string>;
+
+	// Empty path returns root
+	if (!path)
+		return folder;
+
+	// Split by path sep
+	if (typeof path == 'string') {
+		// Remove leading slash
+		if (path.startsWith('/'))
+			path = path.slice(1);
+		parts = path.split('/');
+	} else {
+		parts = path;
+	}
+
+	for (const name of parts) {
+		found = false;
+		for (const child of folder.children)
+			if (child instanceof TFolder && child.name.toLowerCase() == name.toLowerCase()) {
+				found = true;
+				folder = child;
+				break;
+			}
+		if (!found)
+			return null;
+	}
+
+	return folder;
+}
+
 
 
 /**

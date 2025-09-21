@@ -212,6 +212,9 @@ export class KeymapFile {
 }
 
 
+type KeymapWalkCallback = (item: KeymapItem, keys: KeyPress[]) => void;
+
+
 /**
  * Group of commands in a key map.
  *
@@ -233,19 +236,23 @@ export class KeymapGroup {
 	/**
 	 * Add child item given next key in sequence.
 	 * If a child already exists for the given keypress, overwrite it.
+	 * @returns The overwritten child item, if any.
 	 */
-	setChild(key: KeyPress, item: KeymapItem) {
+	setChild(key: KeyPress, item: KeymapItem): KeymapItem | null {
 		for (let i = 0; i < this.children.length; i++) {
 			if (this.children[i].key.equals(key)) {
+				const rval = this.children[i].item;
 				this.children[i] = {key: key, item: item};
-				return;
+				return rval;
 			}
 		}
 		this.children.push({key: key, item: item});
+		return null;
 	}
 
 	/**
 	 * Remove child matching keypress (if it exists).
+	 * @returns The removed child item, if any.
 	 */
 	removeChild(key: KeyPress): KeymapItem | null {
 		for (let i = 0; i < this.children.length; i++) {
@@ -299,5 +306,42 @@ export class KeymapGroup {
 		for (const child of this.children)
 			copy.children.push({...child});
 		return copy;
+	}
+
+	/**
+	 * Walk the keymap tree in depth-first fashion, calling a callback function on each item.
+	 * The callback also receives the key sequence assigned to each item as its second argument.
+	 * @param func Callback function with signature (item, keys).
+	 */
+	walk(func: KeymapWalkCallback): void {
+		this._walk(func, []);
+	}
+
+	private _walk(func: KeymapWalkCallback, keys: KeyPress[]): void {
+		func(this, keys);
+
+		for (const child of this.children) {
+			const child_keys = keys.concat([child.key]);
+			if (child.item instanceof KeymapGroup)
+				child.item._walk(func, child_keys);
+			else
+				func(child.item, child_keys);
+		}
+	}
+
+	/**
+	 * Find key sequences for all commands defined in keymap.
+	 * @returns Mapping from command IDs to arrays of key sequences (a given command may have more
+	 *          than one corresponding key sequence).
+	 */
+	assignedCommands(): Record<string, KeyPress[][]> {
+		const map: Record<string, KeyPress[][]> = {};
+
+		this.walk((item, keys) => {
+			if (item instanceof KeymapCommand)
+				(map[item.command_id] ??= []).push(keys);
+		});
+
+		return map;
 	}
 }

@@ -203,15 +203,28 @@ export class ConfirmModal extends Modal {
 	}
 }
 
+
+interface ModalTitleOptions {
+	// Add bolded "Spacekeys: " to title text
+	spacekeys?: boolean;
+}
+
 /**
  * Add title element to SuggestModal instance.
  */
-export function addModalTitle(modal: SuggestModal<any>, text?: string): HTMLElement {
+export function addModalTitle(modal: SuggestModal<any>, text?: string, options: ModalTitleOptions = {}): HTMLElement {
 	const { modalEl } = modal;
 	const el = createEl('div', { cls: 'spacekeys-modal-title' });
 	modalEl.insertBefore(el, modalEl.firstChild);
-	if (text)
+
+	if (options.spacekeys) {
+		el.createEl('strong', {text: 'Spacekeys'});
+		if (text)
+			el.appendText(': ' + text);
+
+	} else if (text)
 		el.textContent = text;
+
 	return el;
 }
 

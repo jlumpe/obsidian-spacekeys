@@ -466,6 +466,8 @@ export class FindCommandModal extends FuzzySuggestModal<Command> {
 		if (view) {
 			const editor = view.editor;
 			editor.replaceSelection(command.id);
+		} else {
+			new Notice('No active editor');
 		}
 	}
 }

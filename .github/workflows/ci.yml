@@ -24,7 +24,7 @@ jobs:
           npm run build
 
       - name: Test
-        run: npm test
+        run: npx jest --verbose
 
       - name: Create release
         # Run only on tagged release

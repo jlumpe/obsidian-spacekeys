@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-spacekeys",
-	"version": "0.4.0",
+	"version": "0.5.0",
 	"description": "Obsidian plugin for defining hotkeys based on sequences of keypresses",
 	"main": "main.js",
 	"scripts": {

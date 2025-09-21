@@ -4,6 +4,19 @@
 ## Unreleased
 
 
+## 0.5.0
+
+- New features:
+	- Add support for opening files (#9, thanks again to @Moyf).
+	- Display assigned key sequences in "Find Command ID" modal.
+	- Add some additional customizable CSS variables.
+- Bug fixes:
+	- Fix activate-on-space triggering when editing property values or formulas in embedded bases.
+- Internals:
+	- Some internal refactoring.
+	- Improve unit test coverage.
+
+
 ## 0.4.0
 
 - Auto reload keymap on file change (#10).

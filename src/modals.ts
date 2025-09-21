@@ -1,7 +1,7 @@
 import { App, Command, Notice, FuzzySuggestModal, KeymapContext, MarkdownView, Modal, PluginSettingTab, FuzzyMatch } from 'obsidian';
 
 import { KeyPress, KeymapItem, KeymapCommand, KeymapGroup, KeymapFile } from "src/keys";
-import { addModalTitle, getCommandById, listCommands, openFile } from 'src/obsidian-utils';
+import { addModalTitle, findFileByName, getCommandById, listCommands, openFile } from 'src/obsidian-utils';
 import { unparseKey } from './keymapfile';
 
 import type SpacekeysPlugin from './main';
@@ -188,19 +188,28 @@ export class HotkeysModal extends Modal {
 	update() {
 		const item = this.commands.find(this.keySequence);
 
+		// Single command, run it
 		if (item instanceof KeymapCommand) {
-			// Single command, run it
-			this.tryExec(item.command_id);
+			this.execCommand(item.command_id);
 			this.close()
 			return;
 		}
 
+		// Open file
 		if (item instanceof KeymapFile) {
-			// Open file
 			this.openFile(item.file_path);
 			this.close()
 			return;
 		}
+
+		// No valid selection
+		if (item === null) {
+			this.invalidKeys();
+			this.close();
+			return;
+		}
+
+		// Otherwise group
 
 		// Update status
 		const isEmpty = this.keySequence.length == 0;
@@ -213,13 +222,6 @@ export class HotkeysModal extends Modal {
 
 		// Update suggestions
 		this.suggestionsEl.empty();
-
-		if (item === null) {
-			// No valid selection
-			this.invalidKeys();
-			this.close();
-			return;
-		}
 
 		// Todo: empty command group
 		const suggestions = this.getSuggestions(item);
@@ -343,45 +345,40 @@ export class HotkeysModal extends Modal {
 	/* -------------------------------------- Handle selections ------------------------------------- */
 
 	/**
-	 * Try executing the suggestion.
+	 * Try executing the command.
 	 */
-	tryExec(command_id: string): void {
+	execCommand(command_id: string): void {
 		const command = getCommandById(this.app, command_id);
-		if (command)
-			this.execCommand(command);
-		else
-			this.invalidCommand(command_id);
+
+		if (command) {
+
+			// Execute the selected command.
+			// This is done after a short delay, which should give the model time to close and allow
+			// focus to return to the original context (otherwise some commands might not execute).
+			window.setTimeout(
+				// @ts-expect-error: not-typed
+				() => this.app.commands.executeCommand(command),
+				this.settings.execDelay,
+			);
+
+			// Record as last command executed
+			if (command.id !== 'spacekeys:repeat-last')
+				this.plugin.lastCommand = command;
+
+		} else {
+
+			// Create notice of invalid command ID
+			const id_esc = JSON.stringify(command_id);
+			const frag = document.createDocumentFragment();
+			frag.appendText('Unknown command: ');
+			frag.createEl('code', {text: id_esc});
+
+			new Notice(frag);
+
+			console.error('Invalid command ID: ' + id_esc);
+		}
 	}
 
-	/**
-	 * Create notice of invalid command ID
-	 */
-	invalidCommand(command_id: string): void {
-		const id_esc = JSON.stringify(command_id);
-		const frag = document.createDocumentFragment();
-		frag.appendText('Unknown command: ');
-		frag.createEl('code', {text: id_esc});
-
-		new Notice(frag);
-
-		console.error('Invalid command ID: ' + id_esc);
-	}
-
-	/**
-	 * Execute the selected command.
-	 *
-	 * This is done after a short delay, which should give the model time to close and allow focus
-	 * to return to the original context (otherwise some commands might not execute).
-	 */
-	execCommand(command: Command): void {
-		window.setTimeout(
-			// @ts-expect-error: not-typed
-			() => this.app.commands.executeCommand(command),
-			this.settings.execDelay,
-		);
-		if (command.id !== 'spacekeys:repeat-last')
-			this.plugin.lastCommand = command;
-	}
 
 	/**
 	 * Create notice of invalid/unassigned key sequence.
@@ -398,11 +395,11 @@ export class HotkeysModal extends Modal {
 	 * Open file.
 	 */
 	openFile(file_path: string): void {
-		try {
-			openFile(this.app, file_path, { newLeaf: 'tab' });
-		} catch (error) {
-			new Notice(`Error opening file: ${file_path}`);
-		}
+		const file = findFileByName(this.app.vault, file_path);
+		if (file)
+			openFile(this.app, file, { newLeaf: 'tab' });
+		else
+			new Notice(`File not found: ${file_path}`);
 	}
 }
 

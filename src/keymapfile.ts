@@ -208,6 +208,13 @@ function keymapFromYAML(data: YAMLData, extend?: KeymapGroup): KeymapGroup {
 }
 
 
+/**
+ * Parse keymap item (command/file/group) from YAML data.
+ * @param data YAML data.
+ * @param path Path to data in YAML document, for error reporting.
+ * @param extend Existing group to extend.
+ * @returns
+ */
 export function keymapItemFromYAML(data: YAMLData, path: ParsePath, extend?: KeymapGroup): KeymapItem {
 	let item: KeymapItem;
 
@@ -271,6 +278,9 @@ export function keymapItemFromYAML(data: YAMLData, path: ParsePath, extend?: Key
 }
 
 
+/**
+ * Parse keymap group from YAML data.
+ */
 function keymapGroupFromYAML(data: YAMLObject, path: ParsePath, extend?: KeymapGroup): KeymapGroup {
 	let group: KeymapGroup;
 

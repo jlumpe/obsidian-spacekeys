@@ -234,43 +234,60 @@ export default class SpacekeysPlugin extends Plugin {
 		if (!this.isActivateOnSpaceEnabled())
 			return true;
 
+		debug_log('handleSpace()');
+
+		const rejected = this.shouldRejectSpace();
+		if (rejected) {
+			debug_log('Activate on space rejected: ' + rejected);
+			return true;
+		}
+
+		// Activate
+		this.activateLeader();
+		return false;
+	}
+
+	/**
+	 * Check if we should reject activate-on-space.
+	 *
+	 * @returns Reason for rejection (to be logged in debug mode), or null if not rejected.
+	 */
+	shouldRejectSpace(): string | null {
 		const mdview = this.app.workspace.getActiveViewOfType(MarkdownView);
 
 		// Can't use getActiveViewOfType() for several relevant view types as they do not seem to
 		// have their classes exposed publicly, have to use deprecated activeLeaf property.
 		const activeViewType = this.app.workspace.activeLeaf?.view.getViewType();
 
-		// Check that the codemirror editing element (.cm-content) is actually focused.
-		// This avoids the edge case of editing the inline title element, where mdview will be
-		// non-null but we definitely don't want to capture the keypress.
-		const isCodeMirror = !!document.activeElement?.closest('div.cm-content');
-
-		if (mdview && isCodeMirror) {
+		if (mdview && mdview.editor.hasFocus()) {
+			debug_log('Editor focused');
 			// In markdown view and main editor body is active.
 			// Prevent if inserting (focused, and in Vim insert mode if applicable).
 			if (isInserting(mdview))
-				return true;
+				return 'Editor in insert mode';
 
 		} else {
+			debug_log('Editor not focused');
+
 			// Prevent if non-Markdown views disabled in config.
 			// We could still be in markdown view here, either in reading mode or editing the title.
 			// The first is OK, the latter will get excluded below.
 			if (!mdview && this.settings.activateOnSpace == 'markdown_only')
-				return true;
+				return 'Not in markdown editor';
 
 			// Prevent in web viewer leaf, as the below checks don't seem to work well.
 			if (activeViewType === 'webviewer')
-				return true;
+				return 'In webviewer';
 
 			// Prevent in canvas view as space+drag is used to scroll.
 			if (activeViewType === 'canvas')
-				return true;
+				return 'In canvas';
 
 			// Prevent if a text input element is focused.
 			// This catches case of search sidebar, for example.
 			const focused = document.activeElement?.tagName;
 			if (focused == 'INPUT' || focused == 'TEXTAREA')
-				return true;
+				return 'input/textarea element focused';
 
 			// Some additional input elements do not have input tags, but have the contentEditable
 			// attribute. Prevent in this case as well.
@@ -278,12 +295,10 @@ export default class SpacekeysPlugin extends Plugin {
 			// currently focused).
 			if (document.activeElement instanceof HTMLElement &&
 					document.activeElement.contentEditable == 'true')
-				return true;
+				return 'Active element has contenteditable';
 		}
 
-		// Activate
-		this.activateLeader();
-		return false;
+		return null;
 	}
 
 	/**

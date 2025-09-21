@@ -94,17 +94,17 @@ items:
 
   # Open a specific note with the key sequence "w"
   w:
-    description: Specific Note
-    file: notename
+    file: Folder/My Note
 ```
 
-It contains two types of objects:
+It contains three types of objects:
 
 **Command groups** contain an `items` property. The root YAML value is a command group, and additional groups can be used to combine related commands under a common prefix key. The sub-properties of `items` are key code strings (see next section), and their values are commands or more command groups. Command groups can be nested to any level. The `description` property is a string that is displayed in the suggestions menu (not required, but recommended).
 
 **Commands** contain a `command` property that is the command ID to run (see below). They can also have `description` property, but if omitted Spacekeys will use the default description of the command. You can also use the short form, which is a single string consisting of the command ID optionally followed by a space and the description.
 
-**Files** contain a `file` property that is the path to the file to open. This allows you to quickly open specific notes in your vault. The file path can be relative to your vault root.
+**Files** contain a `file` property that describes a file in your vault to open (case insensitive). If the name contains slashes it is interpreted as a path from the vault's root, otherwise all folders in the vault will be searched for a file with a matching name. To match a file in the vault's root directory, use a leading slash. File types other than Markdown are supported (`.canvas`, `.base`, etc). The extension is optional for Markdown files, required otherwise. A `description` property is also supported.
+
 
 ### Key codes
 
@@ -176,7 +176,7 @@ The following variables can be customized through [CSS snippets](https://help.ob
 
 ## Roadmap
 
-- [ ] Add shortcuts to open specific files.
+- [x] Add shortcuts to open specific files.
 - [ ] Better default/example keymap.
 - [x] Use a different modal interface, more similar to Spacemacs.
   - [x] Bottom of screen, full width with more compact layout (multiple columns).

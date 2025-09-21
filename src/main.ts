@@ -134,7 +134,7 @@ export default class SpacekeysPlugin extends Plugin {
 			id: 'find-command',
 			name: 'Find command ID',
 			callback: () => {
-				new FindCommandModal(this.app).open();
+				new FindCommandModal(this).open();
 			},
 		});
 

@@ -1,4 +1,4 @@
-import { App, Command, Notice, FuzzySuggestModal, KeymapContext, MarkdownView, Modal } from 'obsidian';
+import { App, Command, Notice, FuzzySuggestModal, KeymapContext, MarkdownView, Modal, PluginSettingTab, FuzzyMatch } from 'obsidian';
 
 import { KeyPress, KeymapItem, KeymapCommand, KeymapGroup, KeymapFile } from "src/keys";
 import { addModalTitle, getCommandById, listCommands, openFile } from 'src/obsidian-utils';
@@ -416,17 +416,14 @@ export class HotkeysModal extends Modal {
  * Modal for finding command IDs.
  */
 export class FindCommandModal extends FuzzySuggestModal<Command> {
-	constructor(app: App) {
-		super(app);
+	// readonly plugin: SpacekeysPlugin;
+	assignedCommands: Record<string, KeyPress[][]>;
 
-		const title = addModalTitle(this);
-		title.createEl('strong', {text: 'Spacekeys'});
-		title.appendText(': find command');
-
-		this.setInstructions([
-			{command: '↵', purpose: 'Copy ID'},
-			{command: 'Ctrl + ↵', purpose: 'Insert ID'},
-		]);
+	constructor(plugin: SpacekeysPlugin) {
+		super(plugin.app);
+		// this.plugin = plugin;
+		this.assignedCommands = plugin.keymap.assignedCommands();
+		this.initContents();
 
 		this.scope.register(['Ctrl'], 'Enter', (evt: KeyboardEvent, ctx: KeymapContext) => {
 			// Also not part of the public API
@@ -435,12 +432,52 @@ export class FindCommandModal extends FuzzySuggestModal<Command> {
 		});
 	}
 
+	private initContents() {
+		this.modalEl.addClass('spacekeys-find-command-modal');
+
+		addModalTitle(this, 'find command', {spacekeys: true});
+
+		this.setInstructions([
+			{command: '↵', purpose: 'Copy ID'},
+			{command: 'Ctrl + ↵', purpose: 'Insert ID'},
+		]);
+	}
+
 	getItems(): Command[] {
 		return listCommands(this.app);
 	}
 
 	getItemText(command: Command): string {
 		return command.name + ' ' + command.id;
+	}
+
+	renderSuggestion(item: FuzzyMatch<Command>, el: HTMLElement): void {
+		// This is the structure of items in the command palette:
+		el.addClass('mod-complex');
+		const contentEl = el.createEl('div', {cls: 'suggestion-content'});
+		const titleEl = contentEl.createEl('span', {cls: 'suggestion-title'});
+		const auxEl = el.createEl('div', {cls: 'suggestion-aux'});
+
+
+		// This adds the text with <span>'s highlighting the matched text
+		super.renderSuggestion(item, titleEl);
+
+		// Show key sequences for commands in key map
+		if (item.item.id in this.assignedCommands) {
+			el.addClass('spacekeys-is-assigned');
+			const keyseqs = this.assignedCommands[item.item.id];
+
+			for (let i = 0; i < keyseqs.length; i++) {
+				if (i > 0)
+					auxEl.appendText(', ');
+				const keysEl = auxEl.createEl('kbd', {cls: 'spacekeys-key-sequence'});
+				for (let j = 0; j < keyseqs[i].length; j++) {
+					if (j > 0)
+						keysEl.appendText(' ');
+					keysEl.appendText(keyseqs[i][j].repr(true));
+				}
+			}
+		}
 	}
 
 	onChooseItem(item: Command, evt: MouseEvent | KeyboardEvent): void {

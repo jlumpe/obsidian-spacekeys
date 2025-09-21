@@ -37,7 +37,7 @@ export function listCommands(app: App): Command[] {
  */
 function findLeafWithFile(workspace: Workspace, file: TFile): WorkspaceLeaf | null {
 	for (const leaf of workspace.getLeavesOfType('markdown')) {
-		if (leaf.view instanceof FileView && leaf.view.file === file)
+		if (leaf.view instanceof FileView && leaf.view.file !== null && leaf.view.file.path === file.path)
 			return leaf;
 	}
 	return null;
@@ -47,22 +47,6 @@ function findLeafWithFile(workspace: Workspace, file: TFile): WorkspaceLeaf | nu
 /* ---------------------------------------------------------------------------------------------- */
 /*                                              Files                                             */
 /* ---------------------------------------------------------------------------------------------- */
-
-/**
- * @prop newLeaf - Argument to app.workspace.getLeaf().
- * @prop active - Whether to make the tab active after opening.
- * @prop useExisting - If true and there is an existing tab/view with the file open, focus on that
- *                     tab (if active=true) instead of creating a new one.
- * @prop external - Whether to expect the file to be opened in an external application (which is
- *                  what will happen if it is a non-Markdown file). The default is true if the file
-                    has the ".md" extension. If true it overrides the other settings.
- */
-export interface OpenFileOpts {
-	newLeaf?: PaneType | boolean;
-	active?: boolean;
-	useExisting?: boolean;
-	external?: boolean;
-}
 
 
 /**
@@ -87,34 +71,31 @@ export function findFileByName(app: App, fileName: string): TFile | null {
 
 
 /**
+ * @prop newLeaf - Argument to app.workspace.getLeaf().
+ * @prop active - Whether to make the tab active after opening.
+ * @prop useExisting - If true and there is an existing tab/view with the file open, focus on that
+ *                     tab (if active=true) instead of creating a new one.
+ */
+export interface OpenFileOpts {
+	newLeaf?: PaneType | boolean;
+	active?: boolean;
+	useExisting?: boolean;
+}
+
+
+/**
  * Open the given file in the vault.
  *
  * This should open the file in an external editor if it is not a Markdown file.
  */
 export async function openFile(app: App, file: string | TFile, opts: OpenFileOpts = {}) {
-	let tfile: TFile | null = null;
-
-	if (file instanceof TFile) {
-		tfile = file;
-	} else {
-		// First try to get file by exact path
-		tfile = app.vault.getFileByPath(file);
-
-		// If not found, try to find by name
-		if (!tfile) {
-			tfile = findFileByName(app, file);
-		}
-	}
-
-	if (!tfile) {
-		new Notice(`File not found: ${file}`);
+	const tfile = file instanceof TFile ? file : app.vault.getFileByPath(file);
+	if (!tfile)
 		return;
-	}
-
-	const external = opts.external ?? tfile.extension !== 'md';
+	console.log(tfile);
 
 	// Try to find existing tab
-	if (!external && (opts.useExisting ?? true)) {
+	if (opts.useExisting ?? true) {
 		const existing = findLeafWithFile(app.workspace, tfile);
 		if (existing) {
 			if (opts.active ?? true)
@@ -123,14 +104,10 @@ export async function openFile(app: App, file: string | TFile, opts: OpenFileOpt
 		}
 	}
 
-	const leaf = app.workspace.getLeaf(external ? false : opts.newLeaf);
+	const leaf = app.workspace.getLeaf(opts.newLeaf);
 
 	// This seems to open the file in an external app if it is not Markdown
-	try {
-		await leaf.openFile(tfile, {active: external ? false : (opts.active ?? true)});
-	} catch (error) {
-		new Notice(`File not found:\n${file}`);
-	}
+	await leaf.openFile(tfile, {active: opts.active ?? true});
 }
 
 

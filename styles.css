@@ -27,7 +27,7 @@ body {
 /*                                          Primary modal                                         */
 /* ---------------------------------------------------------------------------------------------- */
 
-.spacekeys-modal {
+.spacekeys-modal-container .spacekeys-modal {
 	position: absolute;
 	bottom: 0;
 	width: 100%;
